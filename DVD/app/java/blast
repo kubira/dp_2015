@@ -1,0 +1,5 @@
+#!/bin/bash
+
+../programs/blastp -query f1.fa -subject f2.fa -outfmt '10 ppos' | sort -rg
+rm f1.fa f2.fa
+

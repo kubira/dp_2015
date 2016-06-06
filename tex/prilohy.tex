@@ -1,0 +1,420 @@
+%###############################################################################
+\chapter{Formální definice a~lemmata}
+%###############################################################################
+
+Zde jsou uvedeny doplòující detaily k~podkapitole \ref{density} o~shlukování na
+základì hustoty. Pøedev¹ím formální definice a~lemmata, která jsou odkazována
+z~textu diplomové práce.
+
+%*******************************************************************************
+\section{DBSCAN}
+%*******************************************************************************
+
+\begin{definice}[$\varepsilon$-okolí bodu] \label{eokoli}
+
+$\varepsilon$-okolí bodu P, oznaèované $N_{\varepsilon}(P)$, je definováno
+$N_{\varepsilon}(P) = \{Q \in D\,|\,dist(P, Q) \leq \varepsilon\}$.
+
+\end{definice}
+
+\begin{definice}[Pøímá dosa¾itelnost na základì hustoty] \label{prima}
+
+Bod P je pøímo dosa¾itelný na základì hustoty z~bodu Q~vzhledem k~$\varepsilon$
+a~\emph{MinPts} pokud:
+\begin{enumerate}
+  \item $P \in N_{\varepsilon}(Q)$ a~zároveò
+  \item $|N_{\varepsilon}(Q)| \geq MinPts$ (podmínka jádra).
+\end{enumerate}
+
+\end{definice}
+
+Zøejmì je pøímá dosa¾itelnost na základì hustoty symetrická pro dvì jádra.
+Obecnì není symetrická pro jedno jádro a~jeden hranièní bod. Obrázek
+\ref{fig:dbscan1} zobrazuje pøípad asymetrie.
+
+\begin{definice}[Dosa¾itelnost na základì hustoty] \label{dosazitelnost}
+
+Bod P je dosa¾itelný na základì hustoty z~bodu Q~vzhledem k~$\varepsilon$
+a~\emph{MinPts}, pokud existuje øetìz bodù $P_1, P_2, \dots, P_n$, $P_1 = Q$,
+$P_n = P$, takový, ¾e $P_{i+1}$ je pøímo dosa¾itelný na základì hustoty z~$P_i$.
+
+\end{definice}
+
+Dosa¾itelnost na základì hustoty je kanonické roz¹íøení pøímé dosa¾itelnosti na
+základì hustoty. Tento vztah je tranzitivní, ale není symetrický. Obrázek
+\ref{fig:dbscan2} zobrazuje vztahy nìkolika vzorových bodù, konkrétnì pøípad
+asymetrie. I~kdy¾ není obecnì symetrický, je zøejmé, ¾e dosa¾itelnost na základì
+hustoty je symetrická pro jádra.
+
+Dva hranièní body stejného shluku C~nejsou pravdìpodobnì navzájem dosa¾itelné na
+základì hustoty, proto¾e podmínka jádra nemusí platit pro oba. Nicménì musí
+existovat jádro v~C, pro které jsou oba hranièní body shluku C~dosa¾itelné na
+základì hustoty. Proto je zaveden pojem spojení na základì hustoty, který
+pokrývá tento vztah hranièních bodù.
+
+\begin{definice}[Spojení na základì hustoty] \label{spojeni}
+
+Bod P je spojený na základì hustoty s~bodem Q~vzhledem k~$\varepsilon$
+a~\emph{MinPts}, pokud existuje bod O takový, ¾e oba body P~a~Q jsou dosa¾itelné
+na základì hustoty z~bodu O~vzhledem k~$\varepsilon$ a~\emph{MinPts}.
+
+\end{definice}
+
+Spojení na základì hustoty je symetrický vztah. Pro body dosa¾itelné na základì
+hustoty je vztah spojení na základì hustoty také reflexivní (obrázek
+\ref{fig:dbscan2}).
+
+\begin{definice}[Shluk] \label{def:shluk}
+
+Nech» \emph{D}~je databáze bodù. Shluk C~vzhledem k~$\varepsilon$
+a~\emph{MinPts} je neprázdná podmno¾ina \emph{D}~splòující tyto podmínky:
+
+\begin{enumerate}
+  \item $\forall$ P, Q: Pokud P $\in$ C a Q je dosa¾itelné na základì hustoty
+  z P vzhledem k~$\varepsilon$ a~\emph{MinPts}, pak Q $\in$ C (Maximalita).
+  \item $\forall$ P, Q $\in$ C: P je spojené na základì hustoty s Q vzhledem
+  k~$\varepsilon$ a~\emph{MinPts} (Konektivita).
+\end{enumerate}
+
+\end{definice}
+
+\begin{definice}[©um] \label{sum}
+
+Nech» $C_1, \dots, C_k$ jsou shluky databáze \emph{D}~vzhledem k~parametrùm
+$\varepsilon_i$ a~$MinPts_i$, $i=1, \dots, k$. Pak definujeme ¹um jako mno¾inu
+bodù v~databázi \emph{D}~nepatøících do ¾ádného shluku $C_i$,
+tj. ¹um $= \{P \in D\,|\,\forall i: P \notin C_i\}$.
+
+\end{definice}
+
+Shluk C~vzhledem k~$\varepsilon$ a~\emph{MinPts} obsahuje alespoò \emph{MinPts}
+bodù proto¾e:
+
+\begin{enumerate}
+  \item C~obsahuje jeden bod~P, P~musí být spojené na základì hustoty samo
+  k~sobì pøes nìjaký bod O~(který mù¾e být toto¾ný s~P).
+  \item Tedy, alespoò O~musí splòovat podmínku jádra, a~proto
+  $\varepsilon$-okolí bodu O~obsahuje alespoò \emph{MinPts} bodù.
+\end{enumerate}
+
+Následující lemmata jsou dùle¾itá pro ovìøení správnosti algoritmu DBSCAN
+a~vyjadøují následující:
+
+Vzhledem k~parametrùm $\varepsilon$~a~\emph{MinPts} lze nalézt shluk bìhem dvou
+krokù. Nejprve se vybere z~databáze bod splòující podmínku jádra jako semínko.
+Poté se získají v¹echny body, které jsou dosa¾itelné na základì hustoty z~tohoto
+semínka, jako shluk semínka.
+
+\begin{lemma}
+
+Nech» P~je bod v~D~a~$|N_{\varepsilon}(P)| \geq MinPts$. Pak mno¾ina
+$O = \{o\,|\,o \in D\,\wedge\,o$ \emph{je dosa¾itelné na základì hustoty z P
+vzhledem k~$\varepsilon$ a~MinPts$\}$} je shluk vzhledem k~$\varepsilon$
+a~\emph{MinPts}.
+
+\end{lemma}
+
+Není zcela zøejmé, ¾e shluk C~vzhledem k~$\varepsilon$ a~\emph{MinPts} je
+jednoznaènì urèen nìjakým jeho jádrem. Nicménì ka¾dý bod v~C~je dosa¾itelný na
+základì hustoty z~jakéhokoliv jádra v~C a~tedy shluk C~obsahuje právì body,
+které jsou dosa¾itelné na základì hustoty z~jakéhokoliv jádra v~C.
+
+\begin{lemma} \label{lem:shluk}
+
+Nech» C~je shluk vzhledem k~$\varepsilon$ a~\emph{MinPts} a~nech» P~je nìjaký
+bod v~C s~$|N_{\varepsilon}(P)| \geq MinPts$. Pak C~je shodné s~mno¾inou
+$O = \{o\,|\,o$ \emph{je dosa¾itelné na základì hustoty z~P vzhledem
+k~$\varepsilon$ a~MinPts$\}$}.
+
+\end{lemma}
+
+%*******************************************************************************
+\section{DENCLUE}
+%*******************************************************************************
+
+\begin{definice}[Funkce vlivu] \label{vliv}
+
+\emph{Funkce vlivu} datového objektu $y \in F^d$ je funkce
+$f_B^y\,:\,F^d \rightarrow R_0^+$, která je definována z~hlediska základní
+funkce hustoty $f_B$:
+$$ f_B^y(x) = f_B(x,y). $$
+
+\end{definice}
+
+\begin{definice}[Funkce hustoty] \label{hustota}
+
+\emph{Funkce hustoty} je definována jako souèet funkcí vlivu v¹ech datových
+bodù. Pro $N$ datových objektù popsaných mno¾inou vektorù rysù
+$D = \{x_1, \dots, x_N\} \subset F^d$ je funkce hustoty definována jako:
+$$ f_B^D(x) = \sum\limits_{i=1}^N f_B^{x_i}(x). $$
+
+\end{definice}
+
+Funkce hustoty mù¾e být v~podstatì libovolná funkce. Pro definici specifických
+funkcí vlivu potøebujeme vzdálenostní funkci $d\,:\,F^d \times F^d \rightarrow
+R_0^+$, která urèuje vzdálenost dvou $d$-dimenzionálních vektorù rysù.
+Vzdálenostní funkce musí být reflexivní a~symetrická. Kvùli jednoduchosti budeme
+pøedpokládat Euklidovskou vzdálenostní funkci. Definice jsou ov¹em na volbì
+vzdálenostní funkce nezávislé. Pøíklady základních funkcí vlivu:
+
+\begin{enumerate}
+  \item Obdélníková funkce vlivu:
+  \[ f_{Square}(x,y) = \left\{
+    \begin{array}{l l}
+      0 & \quad \text{pokud $d(x,y) > \sigma$} \\
+      1 & \quad \text{jinak}
+    \end{array} \right.\]
+  \item Gaussova funkce vlivu:
+  $$ f_{Gauss}(x,y) = e^{-\frac{d(x,y)^2}{2\sigma^2}} $$
+\end{enumerate}
+
+Funkce hustoty, která vznikne z~Gaussovy funkce vlivu je:
+
+$$ f_{Gauss}^D(x) = \sum\limits_{i=1}^{N}e^{-\frac{d(x,x_i)^2}{2\sigma^2}}. $$
+
+\begin{definice}[Stoupání (gradient)] \label{sklon}
+
+Stoupání funkce $f_B^D(x)$ je definováno jako:
+$$ \bigtriangledown f_B^D(x)=\sum\limits_{i=1}^N(x_i-x)\cdot f_B^{x_i}(x). $$
+V~pøípadì Gaussovy funkce vlivu je stoupání definováno jako:
+$$ \bigtriangledown f_{Gauss}^D(x)=\sum\limits_{i=1}^{N}(x_i-x)\cdot e^{-\frac{d(x,x_i)^2}{2\sigma^2}}$$
+
+\end{definice}
+
+Obecnì je vhodné, aby funkce vlivu byla symetrická, spojitá a~derivovatelná.
+Definice stoupání je na tìchto vlastnostech nezávislá.
+
+\begin{definice}[Atraktor hustoty] \label{atraktor}
+
+Bod $x^* \in F^d$ se nazývá \emph{atraktor hustoty} pro danou funkci vlivu tehdy
+a~jen tehdy, pokud $x^*$ je lokální maximum funkce hustoty $f_B^D$.
+
+Bod $x \in F^d$ je \emph{atrakován na základì hustoty} k~atraktoru $x^*$ tehdy
+a~jen tehdy, pokud $\exists k \in N\,:\,d(x^k,x^*) \leq \epsilon$ kde:
+$$ x^0 = x, x^i = x^{i-1} + \delta\cdot\frac{\bigtriangledown f_B^D(x^{i-1})}{\| \bigtriangledown f_B^D(x^{i-1}) \|}.$$
+
+\end{definice}
+
+Nyní lze definovat shluky a~odlehlé hodnoty. Odlehlé hodnoty jsou body, které
+nejsou ovlivnìny ,,mnoha'' dal¹ími datovými body. Je tøeba mez $\xi$
+k~formalizaci ,,mnoho''.
+
+\begin{definice}[Shluk definovaný støedem] \label{stred}
+
+\emph{Shluk definovaný støedem} (vzhledem k~$\sigma$, $\xi$) pro atraktor
+hustoty $x^*$ je podmno¾ina $C \subseteq D$, kde $x \in C$ je atrakováno na
+základì hustoty $x^*$ a~$f_B^D(x^*) \geq \xi$. Body $x \in D$ nazýváme
+\emph{odlehlé hodnoty}, pokud jsou atrakovány na základì hustoty lokálním
+maximem $x_0^*$, kde $f_B^D(x_0^*) < \xi$.
+
+\end{definice}
+
+\begin{definice}[Shluk libovolného tvaru] \label{tvar}
+
+\emph{Shluk libovolného tvaru} (vzhledem k~$\sigma$, $\xi$) pro mno¾inu
+atraktorù hustoty $X$ je podmno¾ina $C \subseteq D$, kde:
+\begin{enumerate}
+  \item $\forall x \in C\,\exists x^* \in X\,:\, f_B^D(x^*) \geq\xi$, $x$ je
+  atrakováno na základì hustoty k~$x^*$\\a
+  \item $\forall x_1^*,x_2^* \in X\,:\, \exists$ cesta $P \subset F^d$ z~$x_1^*$
+  do $x_2^*$, kde $\forall p \in P\,:\, f_B^D(p) \geq\xi$.
+\end{enumerate}
+
+\end{definice}
+
+\begin{definice}[Lokální funkce hustoty] \label{lokal}
+
+Lokální funkce hustoty $\hat{f}^D(x)$ je
+$$ \hat{f}^D(x) = \sum\limits_{x_1 \in near(x)} f_B^{x_1}(x).$$
+
+\end{definice}
+
+%###############################################################################
+\chapter{Manuál} \label{manual}
+%###############################################################################
+
+Tato pøíloha popisuje jednotlivé funkèní èásti diplomové práce, pøedev¹ím zpùsob
+jejich spou¹tìní a~pou¾ití.
+
+%*******************************************************************************
+\section{Pomocné skripty} \label{help}
+%*******************************************************************************
+
+Zde jsou popsány pomocné skripty práce nacházejí se v~adresáøích
+\texttt{app/java} a~\texttt{app/tools} pøilo¾eného DVD.
+
+%-------------------------------------------------------------------------------
+\subsection*{uc2cls}
+%-------------------------------------------------------------------------------
+
+Skript v~Pythonu pro pøevod souboru se shluky ve formátu UC, produkovaného
+algoritmem UCLUST, na jednotný formát CLS. Pou¾ití:
+
+\begin{verbatim}
+  ./uc2cls cluster.uc cluster.cls
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{clstr2cls}
+%-------------------------------------------------------------------------------
+
+Algoritmus CD-HIT má výstupní shluky v~souborech formátu CLSTR. Tento skript
+v~Pythonu jej pøevádí na jednotný formát CLS. Pou¾ití:
+
+\begin{verbatim}
+  ./clstr2cls cluster.clstr cluster.cls
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{2ClsSimilarity}
+%-------------------------------------------------------------------------------
+
+Porovnání dvou sad shlukù ve formátu CLS na základì techniky \ref{compare} je
+mo¾né provést tímto skriptem v~Pythonu. Výstupem je desetinné èíslo, které udává
+míru podobnosti sad, ale \textbf{NEJEDNÁ SE O~PROCENTA}. Pou¾ití:
+
+\begin{verbatim}
+  ./2ClsSimilarity cluster1.cls cluster2.cls
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{blast}
+%-------------------------------------------------------------------------------
+
+Jednoøádkový skript v~Bashi je ,,zástupcem'' programu \texttt{blastp} pro
+potøebu BLAST zarovnání dvou sekvencí. Spou¹tí jej tøída \texttt{Alignment}. Aby
+mohl být spu¹tìò, musí být ve spou¹tìcím adresáøi pøítomny dva FASTA soubory
+\emph{f1.fa} a~\emph{f2.fa}. \textbf{SKRIPT OBSAHUJE PØÍKAZ PRO JEJICH SMAZÁNÍ.}
+Pou¾ití:
+
+\begin{verbatim}
+  ./blast
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{fasta}
+%-------------------------------------------------------------------------------
+
+Stejnou funkci jako pøedchozí \texttt{blast} má i~tento skript. Provádí
+FASTA zarovnání dvou FASTA sekvencí \emph{f1.fa} a~\emph{f2.fa}. \textbf{SKRIPT
+OBSAHUJE PØÍKAZ PRO JEJICH SMAZÁNÍ.} Pou¾ití:
+
+\begin{verbatim}
+  ./fasta
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{build}
+%-------------------------------------------------------------------------------
+
+Pøeklad èásti diplomové práce napsané v~Javì provádí tento skript. Vytvoøí
+adresáø \texttt{bin}, do kterého jsou umístìny pøelo¾ené soubory. Pou¾ití:
+
+\begin{verbatim}
+  ./build
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{run}
+%-------------------------------------------------------------------------------
+
+Spou¹tí hlavní tøídu \texttt{Main} diplomové práce. Lze mu na pøíkazové øádce
+zadat a¾ 9 parametrù \texttt{p1-p9}, které se dají pou¾ít ve funkci
+\texttt{main}. Pou¾ití:
+
+\begin{verbatim}
+  ./run [p1 p2 p3 p4 p5 p6 p7 p8 p9]
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{makedoc}
+%-------------------------------------------------------------------------------
+
+Pro vytvoøení dokumentace Java èásti diplomové práce. Spou¹tí \texttt{javadoc}
+s~potøebnými parametry. Dokumentace se po spu¹tìní nachazí v~adresáøi
+\texttt{doc}. Pou¾ití:
+
+\begin{verbatim}
+  ./makedoc
+\end{verbatim}
+
+\newpage
+
+%*******************************************************************************
+\section{FitClust}
+%*******************************************************************************
+
+Pro spu¹tìní shlukování nástrojem FitClust je tøeba nastavit jeho parametry
+a~do souboru \emph{Main.java} zapsat po¾adované operace podle podkapitoly
+\ref{fitclust}. Po tomto nastavení staèí nástroj pøelo¾it skriptem
+\texttt{build} a~poté spustit skriptem \texttt{run}. Pøíklad:
+
+\begin{lstlisting}
+  FitClust fc = new FitClust(
+    0.0, /* Práh podobnosti semínek */
+    "FASTA", /* Metoda zarovnání sekvencí */
+    "DENCLUE", /* Metoda shlukování sekvencí */
+    0.65, /* Parametr sigma nebo eps */
+    4, /* Parametr xí nebo minPts */
+    5, /* Parametr maxIterations */
+    1.0 /* Parametr delta */
+  );
+
+  /**
+   * Z následujících øádkù je tøeba odkomentovat ty,
+   * které mají být pou¾ity nástrojem.
+   */
+  /* Naèítá FASTA záznamy ze souboru */
+  fc.loadFasta("scop.fa");
+  /* Zapisuje seøazené záznamy do souboru */
+  fc.writeFasta("scop_sorted.fa");
+  /* Vybírá semínka ze vstupních FASTA záznamù */
+  fc.selectSeeds();
+  /* Vyluèuje podobná si semínka */
+  fc.excludeSeeds();
+  /* Provádí vektorizaci se semínky */
+  fc.vectorize();
+  /* Zapisuje vektory do souboru */
+  fc.writeVectors("vektory.csv");
+  /* Provádí shlukování */
+  fc.doClustering();
+  /* Zapisuje shluky do souboru */
+  fc.writeCls("shluky.cls");
+\end{lstlisting}
+
+
+%###############################################################################
+\chapter{Obsah DVD}
+%###############################################################################
+
+V diplomové práci je vlo¾eno DVD s následující strukturou:
+
+\begin{itemize}
+
+  \item \texttt{app} -- slo¾ka vytvoøeného nástroje
+    \begin{itemize}
+      \item \texttt{data} -- testovací data
+      \item \texttt{java} -- programová èást práce a~nìkteré pomocné skripty
+        \begin{itemize}
+          \item \texttt{src} -- zdrojové kódy nástroje
+        \end{itemize}
+        
+      \item \texttt{programs} -- externí a~testované aplikace
+      \item \texttt{results} -- výsledky testování
+      \item \texttt{tools} -- ostatní pomocné skripty
+    \end{itemize}
+  
+  \item \texttt{thesis}
+    \begin{itemize}
+      \item \texttt{pdf} - tato zpráva ve formátu PDF
+      \item \texttt{src} - zdrojové soubory pro vygenerování této zprávy
+    \end{itemize}
+  
+\end{itemize}
+
+
+%###############################################################################
+\chapter{Poznámky}
+%###############################################################################
+
+

@@ -1,0 +1,2518 @@
+%=========================================================================
+% (c) Michal Bidlo, Bohuslav Køena, 2008
+
+
+%###############################################################################
+\chapter{Úvod}
+%###############################################################################
+
+Sekvenèní analýza hraje zásadní roli ve~výpoèetní biologii. Velikosti
+proteinových databází rychle narùstají díky výstupùm z~rozsáhlých genomových
+projektù a~objevujícímu se poli metagenomiky. To má za následek stále vìt¹í
+obtí¾nost a~èasovou nároènost správy tìchto databází a~spou¹tìní rutinních
+vyhledávání v~nich. Souèasnì je mnoho nových sekvencí podobných nebo témìr
+identických s~ji¾ známými proteiny, mohou být sestøihanými variantami, proteiny
+pøíbuzných druhù nebo jednonukleotidovými polymorfismy. Tato informace mù¾e být
+stì¾ejní pro mnoho úèelù, ale nemusí být relevantní v~jiných. Úèinnou cestou pro
+øe¹ení tohoto problému je shlukování proteinových sekvencí do skupin a~následné
+pou¾ití pouze jediné reprezentativní sekvence nebo konsenzu ka¾dé skupiny.
+Výsledné shluky mohou být buï oddìlené, nebo tvoøit hierarchickou strukturu.
+Shlukování výraznì ¹etøí èas pøi databázovém hledání a~zjednodu¹uje následné
+uspoøádání získaných výsledkù.
+
+
+Detekce homologních proteinových sekvencí je také základem pro predikci
+struktury, funkce a~evoluce dosud neurèených proteinù. Proteiny ve stejných
+rodinách/podrodinách mají podobnou funkci (napø. stejnou enzymatickou aktivitu),
+ale s~jinými parametry (napø. rychlost reakce). Souèasné nástroje vykazují
+urèité nepøesnosti a~nedostatky. Nový nástroj pro shlukování proteinových
+sekvencí, který bude výsledkem této diplomové práce, by mìl dosahovat lep¹ích
+výsledkù ne¾ dostupné nástroje. Jeho hlavním principem je pøevod sekvencí na
+vícedimenzionální vektory, jejich¾ jednotlivé souøadnice pøedstavují podobnosti
+s~ostatními sekvencemi. Podobnost poèítá lokálním zarovnáním. Tyto vektory jsou
+dále shlukovány na základì hustoty.
+
+Kapitola \ref{principles} popisuje vybrané existující principy jak standardního,
+tak hierarchického shlukování, které dávají dobré výsledky a~jsou
+v~bioinformatickém oboru hojnì vyu¾ívány. Dále popisuje algoritmy shlukování
+zalo¾ené na hustotì. Z~tìchto principù bude vybrán a~pøípadnì upraven jeden,
+nebo kombinace více principù pro implementaci nového nástroje shlukujícího
+proteinové sekvence s~po¾adovanými vlastnostmi. Výèet proteinových databází, na
+kterých se bì¾nì testují novì vytváøené shlukovací nástroje, obsahuje kapitola
+\ref{databases}. Nový nástroj je také na nejvhodnìj¹í z~nich testován.
+Nedostatky souèasných algoritmù, vèetnì nástinu jejich mo¾ných øe¹ení, jsou
+podrobnìji rozebrány v~\ref{deficits}. kapitole. Návrhová kapitola~\ref{design}
+popisuje zpùsob øe¹ení jednotlivých èástí nového nástroje vybranými algoritmy.
+V~kapitole \ref{implementation} je popis implementace navr¾eného nástroje
+a~pomocných skriptù vyu¾ívaných pøi jeho vývoji. Metodiku testování
+a~porovnání nástrojù popisuje kapitola \ref{tests}. Ta prezentuje i~dosa¾ené
+výsledky. Závìreèná kapitola \ref{theend} posuzuje výsledek práce a~obsahuje
+návrh jejího mo¾ného budoucího vývoje.
+
+
+%###############################################################################
+\chapter{Existující algoritmy pro shlukování} \label{principles}
+%###############################################################################
+
+Kapitola popisuje populární a~bì¾né vyu¾ívané shlukovací algoritmy jak pro
+biologické sekvence, tak pro pou¾ití v~mnoha jiných vìdeckých disciplinách,
+které by bylo mo¾né implementovat do nového nástroje.
+
+
+%*******************************************************************************
+\section{Standardní algoritmy} \label{standard}
+%*******************************************************************************
+
+Algoritmy produkující výsledky ve formì oddìlených a~exkluzivních shlukù lze
+oznaèit jako standardní. Zde jsou uvedeny jednoduché i~slo¾itìj¹í pøístupy pro
+standardní shlukování.
+
+
+%-------------------------------------------------------------------------------
+\subsection{UCLUST} \label{uclust}
+%-------------------------------------------------------------------------------
+
+Algoritmus UCLUST rozdìluje sadu sekvencí do shlukù. Ka¾dý shluk je definován
+jedinou sekvencí, které se øíká centroid nebo reprezentativní sekvence. V¹echny
+sekvence v~jednom shluku musí mít podobnost s~centroidem vy¹¹í, ne¾ je zadaný
+práh identity T, který si lze pøedstavit jako polomìr shluku (obrázek
+\ref{fig:uclust}).
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/uclust.eps}
+  \caption[Shlukování sekvencí algoritmem UCLUST.]{Shlukování sekvencí
+  algoritmem UCLUST \cite{uclust2}.}
+  \label{fig:uclust}
+\end{figure}
+
+UCLUST je efektivní pro identitu $\sim$50\,\% a~více u~proteinù a~$\sim$75\,\%
+a~více u~nukleotidù. Efektivita této metody na ni¾¹ích identitách je
+diskutabilní, proto¾e se sni¾uje kvalita zarovnání a~nelze z~nìj spolehlivì
+urèit homologii.
+
+Výstupem jsou shluky splòující kritéria:
+
+\begin{enumerate}
+  \item V¹echny centroidy mají vzájemnou podobnost men¹í ne¾ je práh identity T.
+  \item V¹echny sekvence v~jednom shluku mají podobnost vìt¹í nebo rovnu prahu
+  identity T vzhledem k~centroidu.
+\end{enumerate}
+
+UCLUST je v~základu heuristický a~nelze zaruèit dodr¾ení 1. kritéria, ale
+v~praxi jsou dva rùzné centroidy s~podobností vìt¹í nebo rovnou prahu identity T
+vzácností. Obecnì vý¹e uvedená kritéria splní mnoho rùzných shlukování. Nìkterá
+sekvence mù¾e být identická, dle nastaveného prahu T, s~více centroidy.
+V~ideálním pøípadì bude pøiøazena k~nejbli¾¹ímu mo¾nému centroidu, ale pokud
+jich existuje více se stejnou podobností, je pøiøazení nejednoznaèné a~musí být
+provedeno náhodnì.
+
+Identity jednotlivých sekvencí jsou urèovány na základì globálního zarovnání
+a~jsou akceptovány i~fragmenty.
+
+Kroky algoritmu UCLUST:
+
+\begin{enumerate}
+  \item \label{next1} Vezmi následující sekvenci ze vstupu.
+  \item Porovnej ji s~existujícími centroidy na základì krátkých slov o~délce k,
+  tzv. k-mery.
+  \item Zarovnej tuto sekvenci s~ji¾ existujícími centroidy, se kterými mìla
+  dostateènou podobnost na základì k-merù.
+  \item Podle výsledku zarovnání:
+    \begin{enumerate}[a)]
+      \item Pokud se sekvence podobá jednomu centroidu, zaøaï ji do jeho shluku.
+      \item Pokud se sekvence podobá více centroidùm, zaøaï ji k~nejbli¾¹ímu,
+      popø. vyber náhodnì jeden z~více se stejnou mírou podobnosti.
+      \item Pokud se sekvence nepodobá ¾ádnému centroidu, zaveï ji jako nový
+      centroid.
+    \end{enumerate}
+  \item Pokraèuj bodem \ref{next1} pokud nebyl vyèerpán vstup, jinak skonèi.
+\end{enumerate}
+
+Tento algoritmus patøí mezi tzv. ,,laèné'' a~jeho výsledek závisí na poøadí
+vstupních sekvencí. Pokud se následující sekvence shoduje s~ji¾ existujícím
+centroidem, je zaøazena do jeho shluku, jinak se stává centroidem shluku nového.
+Nejvhodnìj¹í sekvence pro centroidy by tedy mìly být ve~vstupní sadì co
+nejdøíve (obrázek \ref{fig:fragments}), zále¾í v¹ak na úèelu pou¾ití. Jednou
+z~mo¾ností mù¾e být seøazení podle délky sekvence \cite{uclust2, uclust1}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/fragments.eps}
+  \caption[Výbìr nejvhodnìj¹ích sekvencí pro centroidy.]{Výbìr nejvhodnìj¹ích
+  sekvencí pro centroidy. Centroidy jsou zobrazeny èervenì. Nejdel¹í sekvence
+  jako centroid (vlevo) a~fragment jako centroid (vpravo). Fragmenty nejsou
+  vhodné centroidy, proto¾e se sekvence v~jeho shluku nemusejí podobat
+  v~èástech, které k~nìmu nejsou zarovnány (¾lutì) \cite{uclust2}.}
+  \label{fig:fragments}
+\end{figure}
+
+
+%-------------------------------------------------------------------------------
+\subsection[CD-HIT]{CD-HIT\protect\footnote{Cluster Database at High Identity
+with Tolerance, \url{http://cd-hit.org/}.}} \label{cdhit}
+%-------------------------------------------------------------------------------
+
+CD-HIT patøí také mezi laèné algoritmy a~pøed samotným shlukováním sekvencí je
+seøadí podle délky od nejdel¹í sekvence po nejkrat¹í. Tvorba
+rep\-re\-zen\-ta\-tiv\-ních sekvencí jednotlivých shlukù probíhá stejnì jako
+u~metody UCLUST. Algoritmus zaruèuje, ¾e v¹echny reprezentativní sekvence jsou
+vzájemnì porovnány a~v¹echny zaøazené sekvence jsou porovnány s~jejich
+reprezentanty. Pøitom nezále¾í na podobnosti dvou sekvencí pøiøazených do
+stejného shluku, napøíklad dvì krátké sekvence mohou být zarovnány v~jiných
+oblastech jedné dlouhé reprezentativní sekvence.
+
+Vzhledem k~vý¹e uvedené shlukovací strategii je tøeba provést vzájemné zarovnání
+mezi v¹emi reprezentanty a~také zaøazených sekvencí s~jejich reprezentanty,
+co¾ je velice èasovì nároèné. Techniky pro urychlení shlukování vyu¾ívané
+v~tomto algoritmu jsou filtry krátkých slov a~tabulka indexù. Filtry krátkých
+slov mají za úèel rozhodnutí, zda identita mezi dvìmi sekvencemi je pod nebo nad
+prahem identity bez jejich vzájemného zarovnání, èím¾ se eliminuje zbyteèné
+zarovnávání dvou nepodobných si sekvencí. Tabulka indexù slou¾í jako slovník,
+který obsahuje v¹echny mo¾né kombinace aminokyselin dle délky slova pou¾itého
+filtru. Napøíklad pro filtr pou¾ívající pentapeptid je poèet záznamù v~tabulce
+$21^5$ (20 aminokyselin + ,,X'' na pìti pozicích).
+
+Pokud mají mít dvì sekvence urèitou podobnost, je nezbytné, aby obsahovaly jistý
+poèet identických krátkých slov. Kdy¾ nemají, není tøeba jejich zarovnávání.
+Napøíklad pro podobnost nad 90\,\% musí sdílet nejménì jeden identický
+dekapeptid. Teoreticky lze ka¾dý filtr pou¾ít pouze pro urèité prahy podobnosti.
+Ji¾ zmínìný dekapeptid platí jen pro vy¹¹í ne¾ 90\% podobnost. Nejni¾¹í práh
+pentapeptidu je 80\,\%, proto¾e dvì sekvence mající podobnost 80\,\% nemusejí
+obsahovat ¾ádný spoleèný pentapeptid, napøíklad se mohou li¹it na ka¾dé páté
+aminokyselinì podél jejich zarovnání (obrázek \ref{fig:xpeptides}). Bohu¾el
+sni¾ováním délky slova filtru výraznì klesá i~jeho efektivita. Efektivnì lze
+pou¾ít pentapeptid a¾ k~70\% podobnosti, tetrapeptid pro 55--60\,\% a~tripeptid
+na hranici 50\,\%.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/xpeptides.eps}
+  \caption[Rovnomìrnì rozlo¾ené neshody pro rùzné délky peptidù.]{Rovnomìrnì
+  rozlo¾ené neshody pro rùzné délky peptidù \cite{wli}.}
+  \label{fig:xpeptides}
+\end{figure}
+
+Dvì sekvence se budou jen vzácnì li¹it na ka¾dé páté pozici podél zarovnání,
+proto¾e obvykle sdílejí více krátkých slov, ne¾ je teoreticky po¾adované èíslo
+a~mohou tedy být pou¾ita i~pro ni¾¹í identity. Pou¾ívání neadekvátních filtrù
+mù¾e zpùsobit, ¾e výsledek shlukování nebude dost kvalitní. Pokud ov¹em
+po¾adujeme rychlé shlukování, je tøeba zvolit optimální bod, který dostateènì
+vyhoví zvolenému úèelu \cite{cdhit3, cdhit1, cdhit2}.
+
+Kroky algoritmu CD-HIT:
+
+\begin{enumerate}
+  \item Seøaï vstupní sekvence od nejdel¹í po nejkrat¹í.
+  \item \label{next2} Vezmi následující sekvenci ze vstupu.
+  \item Proveï porovnání sekvence s~centroidy pomocí filtru krátkých slov.
+  \item Zarovnej tuto sekvenci s~ji¾ existujícími centroidy, které vyhovìly
+  filtru krátkých slov.
+  \item Podle výsledku zarovnání:
+    \begin{enumerate}[a)]
+      \item Pokud se sekvence podobá jednomu centroidu, zaøaï ji do jeho shluku.
+      \item Pokud se sekvence podobá více centroidùm, zaøaï ji k~nejbli¾¹ímu,
+      popø. vyber náhodnì jeden z~více se stejnou mírou podobnosti.
+      \item Pokud se sekvence nepodobá ¾ádnému centroidu, zaveï ji jako nový
+      centroid.
+    \end{enumerate}
+  \item Pokraèuj bodem \ref{next2} pokud nebyl vyèerpán vstup, jinak skonèi.
+\end{enumerate}
+
+
+%-------------------------------------------------------------------------------
+\subsection{kClust} \label{kclust}
+%-------------------------------------------------------------------------------
+
+Potøebu rychlého, senzitivního a~pøesného shlukovacího algoritmu sekvencí
+s~podobností pod 30\,\% vyplòuje metoda kClust. Stejnì jako UCLUST a~CD-HIT je
+i~kClust laèný algoritmus. Vstupní sadu sekvencí seøadí pøed zpracováním od
+nejdel¹í po nejkrat¹í. Obdobným zpùsobem jako pøedchozí metody urèuje
+i~reprezentativní sekvence jednotlivých shlukù. Algoritmus je rychlý
+a~senzitivní díky pou¾itému pøedfiltru, který nevyu¾ívá nároèné vzájemné
+zarovnávání v¹ech dvojic sekvencí. Dal¹ího zrychlení dosahuje dynamickým
+programováním nad k-ticemi pøi samotném zarovnávání pøedfiltrovaných sekvencí.
+
+Pøedfiltr nehledá poèty pøesnì shodných k-tic ve dvou porovnávaných sekvencích,
+ale pracuje s~podobností tìchto k-tic.  Takový pøístup umo¾nil zvý¹ení
+citlivosti metody. Konkrétnì v~pøípadì kClust-u jsou poèítány podobnosti 6-tic
+(obrázek \ref{fig:kclust}). Pokud souèet skóre z~matice podobnosti pøesáhne
+jistý práh $S_{min}$, sekvence pøedfiltru vyhoví a~jsou vzájemnì zarovnány.
+
+Sekvence, které pro¹ly krokem pøedfiltru, se zarovnají rychlou heuristikou
+k-ticového dynamického programování (kDP). Tato heuristika hledá optimální
+lokální zarovnání podobných si ètveøic. Optimální zarovnání je takové, které má
+nejvìt¹í souèet skóre vèetnì penalizace za výskyt mezer. Celkové optimální
+zarovnání dvou sekvencí se poté hodnotí maticí substitucí BLOSUM62 opìt nad
+ètveøicemi.
+
+Pravidla pro zaøazení vstupní sekvence do shluku jsou:
+
+\begin{enumerate}
+  \item Podobnost sekvencí dynamického programování nad ètveøicemi je vìt¹í, ne¾
+  minimální skóre v matici substitucí BLOSUM62 po sloupcích.
+  \item Zarovnání dosahuje E-hodnoty men¹í, ne¾ je zadaný práh (standardnì 1e-3).
+  \item Zarovnání pokrývá alespoò 80\,\% residuí reprezentativní sekvence.
+\end{enumerate}
+
+Tato pravidla zaruèují, ¾e shluky obsahují sekvence s témìø identickou doménovou
+kompozicí. Proto¾e kClust sleduje rozmístìní ètveøic a~¹estic, redukuje se ¹um
+zpùsobený korelací mezi sousedícími k-ticemi \cite{kclust, mayer, remmert}.
+
+Jednotlivé kroky algoritmu:
+
+\begin{enumerate}
+  \item Seøazení vstupních sekvencí podle délky od nejdel¹í po nejkrat¹í.
+  \item \label{nextSeq} Porovnání následující vstupní sekvence pomocí 6-ticového
+  pøedfiltru s~ji¾ existujícími reprezentativními sekvencemi shlukù.
+  \item Zarovnání sekvence s~ji¾ existujícími reprezentativními sekvencemi,
+  které vyhovìly pøedfiltru, algoritmem k-ticového dynamického programování
+  ètveøic.
+  \item Podle výsledku zarovnání:
+    \begin{enumerate}[a)]
+      \item Pokud se sekvence dostateènì shoduje s~reprezentativní sekvencí
+      nìkterého shluku (podle vý¹e uvedených tøí pravidel), je do tohoto shluku
+      zaøazena.
+      \item Pokud se sekvence neshoduje s~¾ádnou reprezentativní sekvencí,
+      zavede se jako reprezentativní sekvence nového shluku.
+    \end{enumerate}
+  \item Pokraèování od bodu \ref{nextSeq} pokud nebyl vyèerpán vstup, jinak
+  konec algoritmu shlukování.
+\end{enumerate}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.425]{fig/kclust.eps}
+  \caption[Zjednodu¹ený algoritmus skórování k-tic]{Zjednodu¹ený algoritmus
+  skórování k-tic \cite{mayer}.}
+  \label{fig:kclust}
+\end{figure}
+
+%-------------------------------------------------------------------------------
+\subsubsection*{kDP}
+%-------------------------------------------------------------------------------
+
+První krok algoritmu urèuje optimální cestu na k-ticových shodách. Provádí
+dynamické programování pro maximalizaci skóre zarovnání k-tic vèetnì
+heuristických penalt za mezery.
+
+Druhý krok vyu¾ívá vytvoøenou cestu v~prvním kroku pro výpoèet kompletního
+zarovnání páru sekvencí. Zarovnání residuí mezi shodami k-tic poèítá se
+standardními afinními mezerovými penaltami a~hodnocením substitucí aminokyselin.
+
+Ve fázi dynamického programování je poèítáno maximální zarovnání k-tice pro
+ka¾dý vrchol. Toto skóre koresponduje s~nejlep¹ím zarovnáním shody k-tic
+konèících ve vrcholu. Algoritmus zpracovává vrcholy vzestupnì dle pozice
+\textit{i} v~sekvenci \textit{x}. Dochází k~maximalizaci skóre pro ka¾dý vrchol
+(obrázek \ref{kdp}, èervený bod) kontrolou pouze blízkých shodných k-tic uvnitø
+ètvercového okna s~délkou strany $\Delta$ residuí (obrázek \ref{kdp}, modrý
+ètverec). Aby byl pøístup ke shodám k-tic v~$\Delta$-oknì rychlý, nedávno
+zpracované vrcholy uvnitø $\Delta$-pásma (obrázek \ref{kdp}, pøeru¹ovaný modrý
+obdélník) jsou udr¾ovány. Nejbli¾¹í vrcholy k~pøední linii $\Delta$-pásma na
+rùzných diagonálách jsou oznaèovány jako bázové body (obrázek \ref{kdp}, zelené
+body). K-ticový graf k~nim poskytuje pøístup dle poøadí jejich diagonál (obrázek
+\ref{kdp}, zelené èáry). Navíc, ka¾dý bázový bod má hranu ke koncovým vrcholùm
+na stejné diagonále. Èervené pøeru¹ované èáry (obrázek \ref{kdp}) indikují
+vrcholy, které budou kontrolovány pro dynamické optimalizování skóre. Pokud
+existuje více k-ticových shod na stejné diagonále, je pou¾it pouze nejbli¾¹í
+vrchol, co¾ nièemu nevadí, proto¾e více shodných k-tic na stejné diagonále èasto
+ukazuje na homologní regiony. Je tedy velmi nepravdìpodobné, ¾e by cesta
+zarovnání pokrývala pouze zlomek tìchto shod. Z~tohoto dùvodu postaèuje kontrola
+nejbli¾¹ího vrcholu k~nalezení optimální cesty. V~ka¾dém vrcholu musí být
+provedeny následující kroky pro výpoèet skóre k-ticového zarovnání a~pro
+uchování aktualizovaného k-ticového grafu.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/kdp1.eps}
+  \caption[k-ticové dynamické programování]{k-ticové dynamické programování
+  \cite{mayer}.}
+  \label{kdp}
+\end{figure}
+
+\begin{enumerate}
+  \item \label{first} Nalezení vrcholù v~$\Delta$-oknì pomocí bázových bodù
+  aktuálního $\Delta$-pásma. Bázové body mimo okno mù¾ou mít vrcholy na jejich
+  diagonále, které jsou uvnitø okna. Ty jsou pøístupné z~bázových bodù díky
+  hranám, které ukazují na dal¹í vrchol stejné diagonály.
+  \item Výpoèet skóre dynamického programování maximalizací pøes cesty (èervené
+  bodované èáry) pøes v¹echny mo¾né pøedchùdce vrcholù nalezených v~modrém
+  $\Delta$-oknì. Ulo¾ení maximálního skóre dynamického programování
+  a~odpovídajícího zpáteèního vrcholu v~aktuálnì zpracovávaném vrcholu (èervený
+  bod).
+  \item \label{add} Aktualizace pozice pøední linie $\Delta$-pásma a~pøidání
+  aktuálního vrcholu jako bázového do k-ticového grafu (obrázek \ref{kdp2}).
+  \item \label{truncate} Aktualizace zadní linie $\Delta$-pásma osekáním
+  vrcholù, které ji¾ nejsou uvnitø pásma a~zmìna relevantních hran.
+  \item Posun na následující vrchol podle pozice \textit{i} v~sekvenci $S_x$
+  a~návrat na bod \ref{first}.
+\end{enumerate}
+
+Existují dva rùzné zpùsoby pro zahrnutí aktuálnì zpracovaného vrcholu do
+k-ticového grafu (krok \ref{add}). Buï je obsazena nová diagonála (obrázek
+\ref{kdp2}a) nebo je existující bázový bod nahrazen (obrázek \ref{kdp2}b).
+Vrcholy, které vypadnou na levé stranì $\Delta$-pásma (krok \ref{truncate}) jsou
+zpracované obdobnì. Pokud byl vrchol bázovým bodem, pøilehlé bázové body musí
+být znovu pøipojeny (obrázek \ref{kdp2}, zelená hrana). Jinak, vrchol je tøeba
+odpojit od jeho souseda na stejné diagonále \cite{mayer}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/kdp2.eps}
+  \caption[Zpùsoby zahrnutí aktuálnì zpracovávaného vrcholu do k-ticového
+  grafu.]{Zpùsoby zahrnutí aktuálnì zpracovávaného vrcholu do k-ticového grafu
+  \cite{mayer}.}
+  \label{kdp2}
+\end{figure}
+
+
+%-------------------------------------------------------------------------------
+\subsection{Tribe-MCL}
+%-------------------------------------------------------------------------------
+
+Metody pro shlukování proteinových sekvencí do rodin se obecnì spoléhají na
+jejich míru podobnosti. Jedním problémem, kterému tyto metody èelí v~mnoha
+proteinových rodinách, je detekce vícedoménových struktur. Proteiny obsahující
+vícedomény mohou metody zmást a~výsledek obsahuje ¹patné zaøazení do proteinové
+rodiny. Výskyt sdílených domén ve skupinì proteinù nemusí nutnì znamenat, ¾e
+provádìjí stejnou biochemickou funkci. V~ideálním pøípadì jsou tyto typy
+proteinù zaøazeny do jedné rodiny pouze pokud vykazují vysokou podobnost stavby
+domén. Kromì tìchto relativnì velkých, nezávisle slo¾ených proteinových domén,
+bylo zji¹tìno, ¾e men¹í, pomìrnì roz¹íøené proteinové moduly, zhor¹ují problém
+je¹tì více. Mnoho proteinù sdílí tzv. ,,promiskuitní domény'' a~je známo, ¾e
+zastávají velmi rozdílné funkce. Proteiny pøiøazené do rodiny èistì na základì
+tìchto domén pravdìpodobnì nemají spoleènou evoluèní historii s~ostatními èleny
+rodiny.
+
+Mnoho eukaryotických proteinù obsahuje velké mno¾ství proteinových domén,
+z~nich¾ ka¾dá musí být detekována a~vyøe¹ena efektivním shlukovacím algoritmem.
+Iterativní algoritmy automaticky detekující domény trpí nadmìrným
+a~nepøedvídatelným mno¾stvím dodateèných krokù pro porovnání sekvencí, které je
+èiní nepraktickými. Øe¹ením by byla spí¹e detekce proteinù s~velmi podobnou
+stavbou domén, ne¾ detekce ka¾dé individuální domény. Pøedpokladem je, ¾e
+proteiny s~témìø identickou sadou domén mù¾ou mít velmi podobnou biochemickou
+roli.
+
+Tradièní metody pracují s~podobnostním vztahem mezi párem sekvencí, ale teorie
+grafù umo¾òuje klasifikaci proteinù do rodin zalo¾enou na globálním zpracování
+v¹ech vztahù v~podobnostním prostoru souèasnì. Tribe-MCL je efektivní
+a~spolehlivá shlukovací metoda zalo¾ená na Markovovì shlukovacím (MCL)
+algoritmu, který byl vytvoøen pro shlukování grafù vyu¾ívaných v~simulaci tokù.
+Tento pøístup je neuvìøitelnì rychlý, velice pøesný a~netrpí mnoha vý¹e
+uvedenými problémy.
+
+Algoritmus vy¾aduje pøedpoèítanou matici podobnosti, která reprezentuje spojení
+grafu. Jednotlivé uzly reprezentují proteiny, hrany reprezentují podobnosti mezi
+proteiny. Váha je hranám pøiøazována jako párový prùmìr $-log_{10}(E-hodnoty)$,
+výsledkem je symetrická matice. Váhy jsou dále transformovány na
+pravdìpodobnosti mezi proteiny uvnitø grafu. Matice prochází iterativnì expanzí
+a~inflací, dokud neobsahuje velmi malou nebo ¾ádnou zmìnu (ekvilibrium). Finální
+matice se pak interpretuje jako shlukování proteinù do rodin. Kroky algoritmu
+jsou popsány na obrázku \ref{fig:tribemcl}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/tribemcl.eps}
+  \caption[Schéma algoritmu Tribe-MCL.]{Schéma algoritmu Tribe-MCL \cite{tribe}.}
+  \label{fig:tribemcl}
+\end{figure}
+
+MCL algoritmus vyhledává shluky v~grafu pomocí matematických procedur. Proces
+deterministicky vypoèítává náhodné prùchody grafem podobnosti a~pou¾ívá dva
+operátory transformující jednu pravdìpodobnost na druhou. Vyu¾ívá k~tomu jazyk
+stochastických matic (zvaných Markovovy matice), které zachycují matematický
+koncept náhodného procházení grafem. Støídá pøi tom operátory zvané expanze
+a~inflace. Expanze se shoduje s~umocòováním matice. Inflace odpovídá umocòování
+matice po slo¾kách, následovanému zmìnou mìøítka, èím¾ se matice stává opìt
+stochastickou, tj. buòky matice odpovídají pravdìpodobnostem. Sloupcová
+stochastická matice je matice s~vlastností, ¾e souèet hodnot ve sloupci je roven
+1. Ka¾dý sloupec odpovídá jednomu uzlu, ka¾dá buòka ve sloupci potom hranì
+s~pravdìpodobností k~jinému uzlu. Parametr inflace MCL algoritmu je pou¾íván ke
+kontrole zrnitosti (tìsnosti) jednotlivých shlukù. Inflace zvy¹uje
+pravdìpodobnost uvnitø shluku a~sni¾uje pravdìpodobnost mezi shluky.
+
+Tento algoritmus je rychlý, ¹kálovatelný a~má pøirozený parametr zrnitosti.
+Je postaven na velmi odli¹ném paradigmatu ne¾ ostatní shlukovací metody
+\cite{tribe}.
+
+
+%-------------------------------------------------------------------------------
+\subsection{Hobohm and Sander}
+%-------------------------------------------------------------------------------
+
+Uwe Hobohm a~Chris Sander vytvoøili dva rùzné algoritmy pro výbìr
+reprezentativních sekvencí ze vstupní datové sady, které jsou urèeny pøedev¹ím
+pro minimalizaci redundance a~maximalizaci pokrytí redukované datové sady
+\cite{hobohm1, hobohm2}.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Select until done (,,vyber dokud není hotovo'')}
+%-------------------------------------------------------------------------------
+
+Algoritmus probíhá souèasným zpracováváním tøí seznamù proteinových
+identifikátorù:
+\begin{itemize}
+  \item testovací seznam v¹ech kandidátních proteinù (test list),
+  \item seznam pøeskoèení (skip list),
+  \item seznam výbìru (select list).
+\end{itemize}
+Testovací seznam mù¾e být seøazen podle u¾ivatelem definovaných kritérií, tak¾e
+urèité typy proteinù mají vìt¹í pravdìpodobnost výbìru. Seznam pøeskoèení
+obsahuje proteiny, které jsou podobné pøedchozím zpracovaným proteinùm
+z~testovacího seznamu a~mù¾e také obsahovat pøedem ne¾ádoucí proteiny. Seznam
+výbìru (poèáteènì prázdný) obsahuje proteiny vybrané jako reprezentativní.
+
+Postup jednotlivých krokù algoritmu:
+\begin{enumerate}
+  \item \label{read} Naèti identifikátor jednoho proteinu z~testovacího seznamu.
+  \item Zkontroluj, jestli je tento protein v~seznamu pøeskoèení:
+    \begin{enumerate}
+      \item Pokud ano, opakuj bod \ref{read}.
+      \item Pokud ne, pokraèuj na dal¹í bod.
+    \end{enumerate}
+  \item \label{check} Zkontroluj, jestli protein splòuje u¾ivatelem
+  specifikované po¾adavky (napø. minimální délka sekvence):
+    \begin{enumerate}
+      \item Pokud ano, pøidej protein do seznamu výbìru.
+      \item Pokud ne, jdi na bod \ref{read}.
+    \end{enumerate}
+  \item \label{start} Proveï FASTA vyhledávání proteinu oproti zbývajícím
+  sekvencím v~testovacím seznamu.
+  \item \label{scan} Projdi výsledný FASTA soubor a~pøidej do seznamu pøeskoèení
+  proteiny s~vìt¹í podobností, ne¾ je nastavený práh.
+  \item Pokud je¹tì nebyl zpracován celý vstup, vra» se na bod \ref{read}, jinak
+  skonèi.
+\end{enumerate}
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Remove until done (,,odstraò dokud není hotovo'')}
+%-------------------------------------------------------------------------------
+
+Tento algoritmus je výpoèetnì nároènìj¹í, proto¾e vy¾aduje kompletní matici
+párových vztahù mezi v¹emi proteiny v~seznamu kandidátù. Cílem je odstranìní,
+v~co nejmen¹ím poètu krokù, jednoho proteinu souèasnì s~jeho párovými vztahy,
+dokud není matice v¹ech zbývajících proteinù bez jakýchkoliv vztahù. Tento
+globální optimalizaèní problém není triviální a~je øe¹en procedurou laèného
+typu: odstranìní proteinu s~nejvy¹¹ím poètem párových vztahù, co¾ smìøuje
+k~minimalizaci celkového poètu potøebných krokù pro odstranìní v¹ech párových
+vztahù v~matici.
+
+Matice vztahù je generována ze vzájemného zarovnání ka¾dé sekvence se v¹emi
+ostatními za pomoci dynamického zarovnávacího algoritmu Smith\&Waterman. Po
+aplikaci zadaného prahu podobnosti obsahuje matice pouze jednobitovou informaci
+pro ka¾dý proteinový pár:
+
+\begin{itemize}
+  \item 1, pokud si jsou proteiny podobné,
+  \item 0 jinak.
+\end{itemize}
+
+V~ka¾dé iteraci je odstranìn protein tak, ¾e jsou v¹echny jeho bitové vztahy
+vùèi ostatním nastaveny na 0. Pokud má nejvy¹¹í poèet párových vztahù více
+proteinù, je jeden z~nich vybrán náhodnì. Algoritmus konèí, kdy¾ jsou v¹echny
+bity párových vztahù vynulovány (v¹echny zbývající proteiny jsou vzájemnì
+odli¹né). Zbývající proteiny se stávají vybranými reprezentanty. V~závìreèném
+prùchodu v¹emi odstranìnými proteiny jsou obnoveny ty, které nemají ¾ádného
+souseda mezi vybranými proteiny, ale tento krok jen zøídkakdy roz¹íøí skupinu
+reprezentantù.
+
+Rozdíl mezi obìma metodami je graficky znázornìn na obrázku \ref{fig:has2}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.25]{fig/has.eps}
+  \caption[Odstraòování proteinù u metod Hobohm and Sander.]{Odstranìní proteinù
+  v~jedné iteraci algoritmu Select until done (vlevo) a~bìhem tøí iterací
+  algoritmu Remove until done (vpravo). Èervené body pøedstavují sekvence
+  k~odstranìní, èervené kru¾nice jejich okolí. Zelenou barvou jsou
+  reprezentovány sousedící body a~jejich okolí. Èerné sekvence znázoròují
+  ostatní sekvence v~blízkosti pøedchozích, ale nejsou algoritmy nijak dotèeny
+  \cite{hobohm2}.}
+  \label{fig:has2}
+\end{figure}
+
+
+%*******************************************************************************
+\section{Hierarchické algoritmy} \label{hierarchy}
+%*******************************************************************************
+
+Výstupem tìchto algoritmù je binární stromová hierarchie mezi vstupními daty.
+V~ka¾dém kroku se vybere dvojice shlukù k~jejich slouèení. N~listù odpovídá
+jednotlivým vstupním polo¾kám. N-1 vnitøních uzlù (shlukù) odpovídá seskupení
+hrub¹í zrnitosti na vy¹¹ím stupni ve stromu a~nejvy¹¹í úroveò pøedstavuje jeho
+koøen. Skóre slouèení pøedstavuje vý¹ku dendrogramu.
+
+Pro~definování podobnosti párù napøíè shluky jsou pou¾ívány rùzné formulace.
+Metody s~jednoduchou vazbou spojují v¾dy nejbli¾¹í dvojice. Peèlivé metody
+doká¾í shlukovat celou vstupní sadu, ètou jednu hranu souèasnì. Z~tohoto dùvodu
+lze implementace s~jednoduchou vazbou ¹kálovat na rozsáhlé datové sady. Jsou ale
+citlivé na odlehlé hodnoty, proto¾e v~jednotlivých krocích uva¾ují pouze
+minimální hranu. 
+
+
+%-------------------------------------------------------------------------------
+\subsection[UPGMA]{UPGMA\protect\footnote{Unweighted Pair Group Method using
+arithmetic Averages.}} \label{upgma}
+%-------------------------------------------------------------------------------
+
+Pravdìpodobnì nejpopulárnìj¹í algoritmus pro hierarchické shlukování zejména ve
+vý\-po\-èet\-ní biologii. Vytváøí koøenový strom podobností zdola nahoru.
+K~urèení podobnosti sekvencí pou¾ívá aritmetický prùmìr napøíè v¹emi shluky,
+díky jeho¾ stabilitì je~velmi praktický, a~je tedy robustnìj¹í ne¾ metody
+s~jednoduchou vazbou.
+
+Shlukování metodou UPGMA vy¾aduje pøedpoèítání zarovnání v¹ech kombinací dvojic
+sekvencí. Hodnoty jsou ulo¾eny do trojúhelníkové matice podobnosti. Spojují se
+v¾dy dvì sekvence nebo shluky s~nejvy¹¹í mírou identity. Po ka¾dém slouèení
+dochází ke zmen¹ení matice tak, ¾e se dva øádky, resp. dva sloupce spojených
+sekvencí nahradí jedním øádkem, resp. jedním sloupcem. Dále je nutný
+pøepoèet spojením dotèených hodnot v~matici s~vyu¾itím aritmetického prùmìru.
+
+Nevýhodou tohoto algoritmu je nutnost uchovávání celé matice podobnosti
+v~pamìti. Poèet párových vztahù narùstá kvadraticky s~poètem shlukovaných
+sekvencí a~matice zaèíná být mimoøádnì velká ji¾ pøi støednì rozsáhlém vstupu.
+Algoritmus se tak stává nepraktický pro mnoho rùzných úloh
+\cite{upgma, pevsner}.
+
+Kroky algoritmu UPGMA:
+
+\begin{enumerate}
+  \item Vypoèítej zarovnání v¹ech kombinací dvojic sekvencí.
+  \item \label{select} Vyber z~tabulky podobnosti dvì sekvence $S_1$ a~$S_2$
+  s~nejvy¹¹í mírou identity.
+  \item Dvojici spoj do jedné sekvence $S_{1+2}$ a~pøepoèítej podobnosti
+  v~tabulce dle vztahu \ref{eq:upgma}
+  \begin{equation}
+    \label{eq:upgma}
+    Identita\:S_{1+2,\,X} = \frac{Identita\:S_{1,\,X} + Identita\:S_{2,\,X}}{2},
+  \end{equation}
+  
+  kde X oznaèuje sekvenci, ke které se vztahuje výpoèet nové míry identity.
+  
+  \item Opakuj od bodu \ref{select}, dokud nejsou spojeny v¹echny dvojice.
+\end{enumerate}
+
+Pøíklad spojení tøí sekvencí algoritmem UPGMA:
+
+\begin{table}[!htb]
+    \begin{minipage}[b]{.49\linewidth}
+      \centering
+        \begin{tabular}{|c|c|c|c|}
+        \hline
+         & \boldmath{$S_1$} & \boldmath{$S_2$} & \boldmath{$S_3$} \\
+        \hline
+        \boldmath{$S_1$} & -- & & \\
+        \hline
+        \boldmath{$S_2$} & {\color{red} 0,71} & -- & \\
+        \hline
+        \boldmath{$S_3$} & 0,57 & 0,63 & -- \\
+        \hline
+        \end{tabular}
+      \caption[Výbìr sekvencí $S_1$ a~$S_2$ pro spojení algoritmem UPGMA.]{Výbìr
+      sekvencí $S_1$ a~$S_2$.}
+    \end{minipage}
+    \begin{minipage}[b]{.49\linewidth}
+      \centering
+        \begin{tabular}{|c|c|c|}
+        \hline
+         & \boldmath{$S_{1+2}$} & \boldmath{$S_3$} \\
+        \hline
+        \boldmath{$S_{1+2}$} & -- & \\
+        \hline
+        \boldmath{$S_3$} & {\color{red} 0,60} & -- \\
+        \hline
+        \end{tabular}
+      \caption[Výbìr sekvencí $S_{1+2}$ a~$S_3$ pro spojení algoritmem UPGMA.]
+      {Výbìr sekvencí $S_{1+2}$ a~$S_3$.}
+    \end{minipage} 
+\end{table}
+
+$$Identita\:S_{1+2,\,3} = \frac{Identita\:S_{1,\,3} + Identita\:S_{2,\,3}}{2}
+= \frac{0,57 + 0,63}{2} = \frac{1,20}{2} = \underline{\underline{0,60}}$$
+
+\begin{figure}[!htb]
+    \begin{minipage}[b]{.49\linewidth}
+      \centering
+        \includegraphics[scale=0.4]{fig/upgma1.eps}
+      \caption[Spojení sekvencí $S_1$ a~$S_2$ algoritmem UPGMA.]{Spojení
+      sekvencí $S_1$ a~$S_2$.}
+    \end{minipage}
+    \begin{minipage}[b]{.49\linewidth}
+      \centering
+        \includegraphics[scale=0.4]{fig/upgma2.eps}
+      \caption[Spojení sekvencí $S_{1+2}$ a~$S_3$ algoritmem UPGMA.]{Spojení
+      sekvencí $S_{1+2}$ a~$S_3$.}
+    \end{minipage} 
+\end{figure}
+
+
+%-------------------------------------------------------------------------------
+\subsection{Neighbour-joining} \label{nejo}
+%-------------------------------------------------------------------------------
+
+Neighbour-joining je shlukovací heuristická metoda, která generuje obecnì
+ne\-ko\-øe\-no\-vé stro\-my. Stejnì jako UPGMA pracuje ve smìru zdola nahoru.
+Vyu¾ívá se predev¹ím pro tvorbu fylogenetických stromù. Jejím cílem je nalézt
+dva uzly ke spojení splòující kritéria:
+
+\begin{enumerate}
+  \item Uzly jsou nejblí¾e k~sobì.
+  \item Uzly jsou nejvzdálenìji od v¹ech ostatních uzlù.
+\end{enumerate}
+
+Vzdálenosti dvojice uzlù od sebe obsahuje pøedpoèítaná matice podobnosti.
+Vzdálenost jednoho uzlu od v¹ech ostatních musí být vypoètena podle vztahu
+\ref{eq:nj}
+
+\begin{equation}
+  \label{eq:nj}
+  u(A) = \frac{1}{N-2}\sum_{i=1}^{N} D(A, X_i),
+\end{equation}
+
+kde èíslo $N$ je poèet v¹ech analyzovaných uzlù a~$D(A, X_i)$ je vzdálenost uzlu
+$A$ od uzlu $X_i$ z~matice podobnosti.
+
+Urèit koøen stromu lze tak, ¾e se do skupiny sekvencí vlo¾í tzv. ,,outgroup'',
+nebo-li sekvence, která je velmi vzdálená od skupiny ostatních analyzovaných
+sekvencí (ingroups). Taková sekvence bude pøipojena ke v¹em ostatním nejdel¹í
+hranou. Pokud nelze jednodu¹e outgroup sekvenci zvolit, vybere se nejdel¹í hrana
+stromu a~koøen je vlo¾en do støedu této hrany \cite{pevsner}.
+
+Kroky metody Neighbour-joining:
+
+\begin{enumerate}
+  \item Vypoèítej matici vzdáleností.
+  \item Vytvoø hvìzdicový strom s~jedním spoleèným støedovým uzlem a~listovými
+  uzly odpovídajícími vstupním sekvencím.
+  \item \label{nj} Najdi dva uzly A a~B, které splòují vý¹e uvedená kritéria.
+  \item Spoj tyto uzly do jednoho uzlu U (obrázek \ref{fig:nj}).
+  \item Vypoèítej délky novì vzniklých hran.
+  \item Vypoèítej vzdálenost uzlu U od v¹ech ostatních uzlù.
+  \item Opakuj od bodu \ref{nj}, dokud nezùstane pouze jediný uzel.
+\end{enumerate}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/nj.eps}
+  \caption[Spojování uzlù metodou Neighbour-joining.]{Poèáteèní strom (vlevo)
+  a~strom po prvním spojení (vpravo) metodou Neighbour-joining.}
+  \label{fig:nj}
+\end{figure}
+
+
+%-------------------------------------------------------------------------------
+\subsection{mBed} \label{mbed}
+%-------------------------------------------------------------------------------
+
+Klíèem k~vytvoøení pokrokového pøístupu ke shlukování sekvencí je pou¾itá
+metoda generující øídící strom. Obvykle se pøedpokládá zarovnání ka¾dé sekvence
+s~ka¾dou pøi slo¾itosti $O(N^2)$. Algoritmus mBed pracuje se slo¾itostí
+$O(N\,log\,N)$ a~produkuje stejnì pøesné stromy jako konvenèní metody.
+
+Sekvence vstupní datové sady jsou pøevedeny na $n$-elementové vektory
+v~$n$-rozmìrném prostoru, kde $n$ je úmìrné k~$log\,N$. Ka¾dý element vektoru
+pøedstavuje jednodu¹e vzdálenost k~jedné z~$n$ referenèních sekvencí. Takové
+vektory pak mohou být shlukovány extrémnì rychle standardními metodami jako
+$k$-means nebo UPGMA.
+
+Algoritmus mBed se skládá ze tøí krokù:
+
+\begin{enumerate}
+  \item Poèáteèní výbìr referenèních sekvencí nazývaných ,,semínka''.
+  
+  Nejdøíve je vybrán vzorek $t$ sekvencí ze vstupní datové sady $X$, kde
+  $t=(log_2N)^2$. Tato poèáteèní mno¾ina se znaèí jako $R$ a~je zvolena z~podle
+  délky seøazené vstupní sady $X$ s~konstantním krokem.
+  
+  Vybraná semínka jsou vzájemnì porovnána. Pokud si jsou nìkterá velice podobná
+  (s~urèitou prahovou vzdáleností), krat¹í z~nich se pova¾uje za nadbyteèné
+  a~je vyøazeno. Tento práh se standardnì nastavuje na nulu, aby byla vyøazena
+  pouze identická semínka.
+  
+  \item Analýza potenciálních semínek.
+  
+  Mno¾ina referenèních sekvencí $R$ teï mù¾e být pou¾ita k~vektorizaci vstupních
+  sekvencí. Alternativnì lze ka¾dé semínko pou¾ít pro nalezení dal¹ích semínek,
+  které lépe charakterizují vstupní datovou sadu. Existují dva zpùsoby:
+  
+  \begin{enumerate}
+    \item Heuristika pou¾ívající støedové objekty.
+    
+    Ka¾dé semínko je pou¾ito k~nalezení poteciálních odlehlých hodnot. Nejdøíve
+    se identifikuje sekvence, která se nachází nejdále od semínka. Sekvence
+    le¾ící nejdále od takovéto sekvence se stává novým semínkem.
+    
+    Pro ka¾dou sekvenci $s$ v~$R$:
+    
+    \begin{enumerate}
+      \item Nech» $l$ je sekvence v~$X$ s~maximální vzdáleností $d(l, s)$.
+      \item Nech» $m$ je sekvence v~$X$ s~maximální vzdáleností $d(m, l)$.
+      \item $m$ je nové semínko.
+    \end{enumerate}
+    
+    \item Heuristika pou¾ívající støedové skupiny.
+    
+    Heuristika støedových skupin pracuje stejnì jako heuristika støedových
+    objektù, jen místo sekvencí hledá jejich skupiny. Nejdøíve najde sekvenci,
+    která je nejdále od semínka. Potom iterativnì hledá sekvenci nalézající se
+    nejdále od skupiny ji¾ nalezených sekvencí.
+    
+    Pro ka¾dou sekvenci $s$ v~$R$:
+    
+    \begin{enumerate}
+      \item Nech» $l$ je sekvence v~$X$ s~maximální vzdáleností $d(l, s)$.
+      \item Nech» $m$ je sekvence v~$X$ s~maximální vzdáleností $d(m, s) + d(m, l)$.
+      \item Nech» $n$ je sekvence v~$X$ s~maximální $d(n, s) + d(n, l) + d(n, m) + \dots$
+    \end{enumerate}
+    
+    Smyèka je ukonèena, pokud se identifikuje stejná sekvence více ne¾ jednou,
+    nebo pokud skupina dosáhne maximální nastavené velikosti. Ka¾dý z~èlenù
+    skupiny je pak novým semínkem. Stejnì jako v~kroku 1, ne¾ se nìkterá
+    sekvence stane novým semínkem, je porovnána s~ji¾ existujícími semínky.
+    Pokud je nìkterému velice podobná, zamítne se jako nové semínko.
+
+  \end{enumerate}
+  
+  \item Vektorizace vstupních sekvencí.
+  
+  Jakmile je vybrána mno¾ina semínek $R$, v¹echny sekvence vstupní datové sady
+  jsou asociovány s~jim odpovídajícím $t$-dimenzionálním vektorem. To se provede
+  jednodu¹e jako výpoèet vzdálenosti sekvence od ka¾dého z~$t$ semínek. Získané
+  hodnoty jsou souøadnice vektoru.
+  
+  Pro ka¾dou sekvenci $s$ v~$X$: $F(s) = [d(s, R_1), d(s, R_2), \dots, d(s, R_t)]$
+  (obrázek \ref{fig:mbed}).
+\end{enumerate}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/mbed.eps}
+  \caption[Vektorizace vstupní sekvence metodou mBed.]{Vektorizace vstupní
+  sekvence $s$ od $t$ semínek metodou mBed.}
+  \label{fig:mbed}
+\end{figure}
+
+Proces pøevodu biologických sekvencí na jim odpovídající vektory probíhá takovým
+zpùsobem, ¾e vzdálenosti mezi tìmito vektory se blí¾í vzájemným vzdálenostem
+mezi sekvencemi. Vektory v~tomto tvaru jsou øazeny rychleji, ne¾ vzdálenosti
+sekvencí, co¾ umo¾òuje rychlej¹í generování matice vzdáleností ze vstupní datové
+sady \cite{mbed}.
+
+
+%-------------------------------------------------------------------------------
+\subsection{Hierarchický CD-HIT}
+%-------------------------------------------------------------------------------
+
+Standardní algoritmus CD-HIT mù¾e být vyu¾itý i~pro proces hierarchického
+shlukování. První bìh probìhne standardnì nad originální vstupní datovou sadou,
+kdy je nastaven vysoký práh podobnosti. V~ka¾dém dal¹ím bìhu vstupují do
+shlukovacího procesu pouze reprezentativní sekvence jednotlivých shlukù
+z~pøedchozího bìhu, ale práh podobnosti je nastaven na men¹í hodnotu (obrázek
+\ref{fig:cdhith}). Tento proces iterativnì spojuje podobné sekvence a~produkuje
+tím hierarchickou strukturu \cite{cdhith}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.3]{fig/cdhith.eps}
+  \caption[Tvorba hierarchie pøi vyu¾ití algoritmu CD-HIT.]{Tvorba hierarchie
+  pøi vyu¾ití algoritmu CD-HIT \cite{wli}.}
+  \label{fig:cdhith}
+\end{figure}
+
+%*******************************************************************************
+\section{Shlukování na základì hustoty} \label{density}
+%*******************************************************************************
+
+Standardní algoritmy vytváøejí rozdìlení databáze \emph{D}~s~\emph{n} objekty
+do \emph{k}~shlukù. \emph{k}~je vstupním parametrem, tj. po¾aduje nìjakou
+znalost oblasti, která není bohu¾el pro mnoho aplikací dostupná. Algoritmus
+typicky zaèíná s~iniciálním rozdìlením \emph{D}~a~pak iterativnì hledá optimální
+rozdìlení. Ka¾dý shluk je reprezentován støedním objektem shluku nebo jedním
+z~objektù shluku le¾ícím blízko jeho støedu. Standardní algoritmy tedy
+pou¾ívají dva kroky. V~prvním urèí \emph{k}~reprezentativních objektù. Ve druhém
+pøidìlují ka¾dý objekt k~nejbli¾¹ímu reprezentativnímu objektu. Shluky nalezené
+tìmito algoritmy jsou konvexní, co¾ je velice omezující.
+
+Hierarchické algoritmy vytváøejí hierarchickou dekompozici \emph{D}. Dekompozice
+je reprezentována dendrogramem, stromem iterativnì rozdìlujícím \emph{D}~na
+men¹í podmno¾iny, dokud ka¾dá podmno¾ina neobsahuje pouze jeden prvek. V~takové
+hierarchii pøedstavuje ka¾dý uzel stromu jeden shluk z~\emph{D}. Dendrogram mù¾e
+být tvoøen od listù ke koøenu (aglomerativnì), resp. od koøene k~listùm
+(èlenìním) shlukù v~ka¾dém kroku. Oproti rozdìlujícím algoritmùm nepotøebují
+\emph{k}~jako vstup, ale potøebují mít definovánu ukonèující podmínku sluèování,
+resp. dìlení.
+
+Shlukovací algoritmy jsou atraktivní pro úlohu klasifikace, ale s~jejich
+aplikací na rozsáhlé databáze rostou následující po¾adavky:
+\begin{enumerate}
+  \item Minimální znalost dané oblasti ke stanovení vstupních parametrù, proto¾e
+  vhodné hodnoty nejsou èasto pøedem známé, pokud se jedná o~rozsáhlé databáze.
+  \item Nalezení shlukù libovolných tvarù, proto¾e tvar shlukù v~databázích mù¾e
+  být lineární, kulový atd.
+  \item Dobrá efektivita na rozsáhlých databázích, tj. na databázích podstatnì
+  vìt¹ích, ne¾ jen pár tisíc objektù.
+\end{enumerate}
+
+Pøi pohledu na ukázkové sady bodù znázornìných na obrázku \ref{fig:density},
+mù¾eme snadno a~jednoznaènì detekovat shluky bodù a~¹umové body nepatøící do
+¾ádného ze shlukù. Hlavní dùvod, proè rozeznáme shluky je ten, ¾e uvnitø ka¾dého
+shluku je hustota bodù typicky znaènì vy¹¹í, ne¾ mimo shluk. Kromì toho, hustota
+v~oblastech ¹umu je men¹í, ne¾ hustota jakéhokoliv ze shlukù.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/density.eps}
+  \caption[Ukázkové sady bodù pro shlukování.]{Ukázkové sady bodù pro shlukování
+  \cite{dbscan}.}
+  \label{fig:density}
+\end{figure}
+
+
+%-------------------------------------------------------------------------------
+\subsection[DBSCAN]{DBSCAN\protect\footnote{Density Based Spatial Clustering of
+Applications with Noise.}} \label{dbscan}
+%-------------------------------------------------------------------------------
+
+Známé algoritmy neposkytují øe¹ení pro kombinaci vý¹e uvedených po¾adavkù.
+Algoritmus DBSCAN vy¾aduje pouze jeden vstupní parametr a~umo¾òuje u¾ivateli
+urèit jeho nejvhodnìj¹í hodnotu. Nalezne shluky libovolných tvarù a~je efektivní
+i~pro rozsáhlé databáze.
+
+Klíèovou my¹lenkou je, ¾e pro ka¾dý bod shluku musí jeho okolí daného polomìru
+obsahovat alespoò minimum bodù, tj. hustota okolí musí pøekroèit urèitý práh.
+Tvar okolí je urèen vybranou vzdálenostní funkcí pro dva body P~a~Q, oznaèovanou
+jako \emph{dist(P, Q)}. Napøíklad pro vzdálenostní funkci Manhattan ve 2D
+prostoru je tvar okolí obdélníkový. Pøístup v~DBSCAN pracuje s~jakoukoliv
+vzdálenostní funkcí, tak¾e pro ka¾dou aplikaci je mo¾né zvolit odpovídající
+funkci.
+
+Naivní pøístup by mohl vy¾adovat pro ka¾dý bod ve shluku alespoò minimální poèet
+(\emph{MinPts}) bodù v~$\varepsilon$-okolí bodu (\ref{eokoli}). Ov¹em tento
+pøístup selhává, proto¾e existují dva druhy bodù ve shluku: body uvnitø shluku
+(jádra) a~body na hranici shluku (hranièní body) (obrázek \ref{fig:dbscan1}).
+Obecnì $\varepsilon$-okolí hranièního bodu obsahuje výraznì ménì bodù ne¾
+$\varepsilon$-okolí jádra. Je tedy tøeba nastavit minimální poèet bodù na
+relativnì nízkou hodnotu za úèelem zahrnutí v¹ech bodù patøících do stejného
+shluku. Tato hodnota ov¹em nebude charakteristická pro pøíslu¹ný shluk --
+zvlá¹tì za pøítomnosti ¹umu. Proto je tøeba, aby pro ka¾dý bod P~ve shluku
+C~existoval takový bod Q~v~C, ¾e P~je uvnitø $\varepsilon$-okolí
+Q~a~$N_{\varepsilon}(P)$ obsahuje alespoò\emph{MinPts} bodù.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/dbscan1.eps}
+  \caption[Jádra a~hranièní body algoritmu DBSCAN.]{Jádra a~hranièní body
+  algoritmu DBSCAN \cite{dbscan}.}
+  \label{fig:dbscan1}
+\end{figure}
+
+Shluk (\ref{def:shluk}) je definován jako mno¾ina bodù spojených na základì
+hustoty (\ref{spojeni}), který je maximální vzhledem k~dosa¾itelnosti na základì
+hustoty (\ref{prima}, \ref{dosazitelnost}) (obrázek \ref{fig:dbscan2}). ©um
+(\ref{sum}) je definován relativnì k~dané mno¾inì shlukù jednodu¹e, jako mno¾ina
+bodù v~\emph{D}, které nepatøí do ¾ádného ze shlukù.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/dbscan2.eps}
+  \caption[Dosa¾itelnost a~spojení na základì hustoty u~metody DBSCAN.]
+  {Dosa¾itelnost na základì hustoty a~spojení na základì hustoty u~metody DBSCAN
+  \cite{dbscan}.}
+  \label{fig:dbscan2}
+\end{figure}
+
+Je tøeba znát ideální parametry $\varepsilon$ a~\emph{MinPts} ka¾dého shluku
+a~alespoò jeden bod pøíslu¹ného shluku. Pak lze získat v¹echny body, které jsou
+dosa¾itelné na základì hustoty z~daného bodu. Neexistuje ov¹em snadný zpùsob,
+jak získat tyto parametry pro v¹echny shluky pøedem. K~tomuto úèelu lze
+jednoduchou a~efektivní heuristikou stanovit $\varepsilon$ a~\emph{MinPts}
+nejøid¹ího shluku databáze. DBSCAN tak pou¾ívá globální hodnotu tìchto parametrù
+(stejné hodnoty pro v¹echny shluky). Parametry hustoty nejøid¹ího shluku jsou
+dobrými kandidáty, proto¾e specifikují nejni¾¹í hustotu, která není pova¾ována
+za ¹um.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Algoritmus}
+%-------------------------------------------------------------------------------
+
+DBSCAN zaène s~libovolným bodem P~a~hledá v¹echny body dosa¾itelné na základì
+hustoty od P~vzhledem k~$\varepsilon$ a~\emph{MinPts}. Pokud je P~jádrem,
+dostaneme shluk vzhledem k~$\varepsilon$ a~\emph{MinPts} (Lemma \ref{lem:shluk}).
+Pokud je P~hranièní bod, ¾ádné body z~nìj nejsou dosa¾itelné na základì hustoty
+a~DBSCAN pokraèuje dal¹ím bodem databáze.
+
+Pøi pou¾ívání globální hodnoty $\varepsilon$ a~\emph{MinPts} mù¾e DBSCAN
+slouèit (dle definice \ref{def:shluk}) dva shluky s~rozdílnou hustotou do
+jednoho, pokud jsou blízko sebe. Nech» je \emph{vzdálenost dvou mno¾in bodù}
+$S_1$ a~$S_2$ definována jako $dist(S_1, S_2) = min\{dist(P, Q)\,|\,P \in S_1,
+Q \in S_2\}$. Potom budou dvì mno¾iny bodù s~hustotou alespoò takovou, jakou má
+nejøid¹í shluk, od sebe oddìleny pouze pokud vzdálenost mezi nimi je vìt¹í ne¾
+$\varepsilon$. Pak mù¾e být nutné rekurzivní volání DBSCAN pro nalezené shluky
+s~vy¹¹í hodnotou \emph{MinPts}. Toto není nevýhodou, proto¾e rekuzivní aplikace
+DBSCAN z~nìj dìlá elegantní a~velmi efektivní algoritmus. Kromì toho, rekurzivní
+shlukování bodù shluku je nezbytné pouze za podmínek, které mohou být snadno
+detekovány.
+
+Pseudokód algoritmu DBSCAN:
+
+\begin{verbatim}
+  DBSCAN (SetOfPoints, Eps, MinPts)
+  
+    // SetOfPoints is UNCLASSIFIED
+    ClusterId := nextId(NOISE);
+    FOR i FROM 1 TO SetOfPoints.size DO
+      Point := SetOfPoints.get(i);
+      IF Point.ClId = UNCLASSIFIED THEN
+        IF ExpandCluster(SetOfPoints, Point, ClusterId, Eps, MinPts) THEN
+          ClusterId = nextId(ClusterId);
+        END IF
+      END IF
+    END FOR
+  END; // DBSCAN
+\end{verbatim}
+
+Nejdùle¾itìj¹í funkcí algoritmu DBSCAN je:
+
+\begin{verbatim}
+  ExpandCluster(SetOfPoints, Point, ClId, Eps, MinPts) : Boolean;
+    seeds := SetOfPoints.regionQuery(Point, Eps);
+    IF seeds.size < MinPts THEN // no core point
+      SetOfPoints.changeClId(Point, NOISE);
+      RETURN False;
+    ELSE  // all points in seeds are density-reachable from Point
+      SetOfPoints.changeClIds(seeds, ClId);
+      seeds.delete(Point);
+      WHILE seeds <> Empty DO
+        currentP := seeds.first();
+        result := SetOfPoints.regionQuery(currentP, Eps);
+        
+        IF result.size >= MinPts THEN
+          FOR i FROM 1 TO result.size DO
+            resultP := result.get(i);
+            IF resultP.ClId IN {UNCLASSIFIED, NOISE} THEN
+              IF resultP.ClId = UNCLASSIFIED THEN
+                seeds.append(resultP);
+              END IF;
+              SetOfPoints.changeClId(resultP, ClId);
+            END IF; // UNCLASSIFIED or NOISE
+          END FOR;
+        END IF; // result.size >= MinPts
+        seeds.delete(currentP);
+      END WHILE; // seeds <> Empty
+      RETURN True;
+    END IF;
+  END; // ExpandCluster
+\end{verbatim}
+
+Pokud jsou dva shluky $C_1$ a~$C_2$ velmi blízko, mù¾e se stát, ¾e nìjaký bod~P
+patøí do obou shlukù. Potom musí být bod~P hranièním bodem v~obou shlucích,
+proto¾e by jinak bylo $C_1$ toto¾né s~$C_2$ (kvùli pou¾ívání globálních
+parametrù). V~takovém pøípadì bude bod~P pøiøazen ke shluku, který byl nalezen
+døíve. A¾ na tyto vyjímeèné situace, výsledek DBSCAN je nezávislý na poøadí
+vstupních bodù (dùsledek Lemma \ref{shluk}).
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Urèení parametrù $\varepsilon$ a~\emph{MinPts}}
+%-------------------------------------------------------------------------------
+
+Heuristika pro urèení parametrù $\varepsilon$ a~\emph{MinPts} ,,nejøid¹ího''
+shluku databáze je zalo¾ena na následujícím pozorování. Nech» \emph{d} je
+vzdálenost bodu P~k~jeho \emph{k}-tému nejbli¾¹ímu sousedovi, potom
+\emph{d}-okolí bodu P~obsahuje právì \emph{k+1} bodù pro témìø v¹echny body P.
+\emph{d}-okolí bodu P~obsahuje více ne¾ \emph{k+1} bodù pouze tehdy, pokud
+nìkolik bodù má pøesnì stejnou vzdálenost \emph{d} od P, co¾ je velmi
+nepravdìpodobné. Kromì toho, zmìna \emph{k} pro bod ve shluku nevede k~velkým
+zmìnám \emph{d}. K tomuto dochází pouze pokud \emph{k}-tí nejbli¾¹í sousedé,
+pro $k=1, 2, 3, \dots$, le¾í pøibli¾nì na jedné pøímce, ale to obecnì neplatí
+pro bod ve shluku.
+
+Pro dané \emph{k} lze definovat funkci \emph{k-dist} z~databáze \emph{D} do
+oboru reálných èísel, která mapuje ka¾dý bod na vzdálenost od jeho \emph{k}-tého
+nejbli¾sího souseda. Pøi sestupném seøazení bodù databáze podle jejich
+\emph{k-dist} hodnoty poskytuje graf této funkce nìkolik nápovìd týkajících se
+distribuce hustoty v~databázi. Pokud je vybrán libovolný bod P, $\varepsilon$ je
+nastaveno na \emph{k-dist(P)} a~parametr \emph{MinPts} na \emph{k}, v¹echny body
+s~hodnotou men¹í nebo rovnou hodnotì \emph{k-dist} budou jádra. Pokud lze nalézt
+\emph{prahový bod} s~maximální hodnotou \emph{k-dist} v~nejøid¹ím shluku
+databáze \emph{D}, získáme po¾adované hodnoty parametrù. Prahový bod je první
+bod v~prvním ,,údolí'' seøazeného k-dist grafu (obrázek \ref{fig:4dist}).
+V¹echny body s~vy¹¹í hodnotou \emph{k-dist} (vlevo od prahu) jsou pova¾ovány za
+¹um, v¹echny ostatní body (vpravo od prahu) jsou pøiøazeny do nìkterého shluku.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.25]{fig/4dist.eps}
+  \caption[Seøazený 4-dist graf pro databázi 3 metodou DBSCAN.]{Seøazený 4-dist
+  graf pro databázi 3 metodou DBSCAN \cite{dbscan}.}
+  \label{fig:4dist}
+\end{figure}
+
+Obecnì je velice tì¾ké detekovat první ,,údolí'' automaticky, ale je to
+relativnì jednoduché pro u¾ivatele, aby vidìl toto údolí v~grafické
+reprezentaci. Proto je navr¾en interaktivní pøístup pro urèení prahového bodu.
+
+DBSCAN potøebuje dva parametry, $\varepsilon$ a~\emph{MinPts}. Ale z~experimentù
+vyplynulo, ¾e \emph{k-dist} graf pro $k > 4$ se výraznì neli¹í od \emph{4-dist}
+grafu (navíc potøebují mnohem více výpoètù). Tímto byl parametr \emph{MinPts}
+eliminován a~pro v¹echny 2D databáze se nastavuje na hodnotu 4. K~interaktivnímu
+urèení parametru $\varepsilon$ je navr¾en následující pøístup:
+
+\begin{itemize}
+  \item Systém vypoèítá a~zobrazí 4-dist graf databáze.
+  \item Pokud mù¾e u¾ivatel odhadnout procento ¹umu, je toto procento zadáno
+  a~systém z~nìj odvodí návrh prahového bodu.
+  \item U¾ivatel buï pøijme navrhnutý práh nebo vybere jiný bod jako prahový.
+  4-dist hodnota prahového bodu je pou¾ita jako $\varepsilon$ pro DBSCAN
+  \cite{dbscan}.
+\end{itemize}
+
+
+%-------------------------------------------------------------------------------
+\subsection[DENCLUE]{DENCLUE\protect\footnote{DENsity-based CLUstEring.}}
+\label{denclue}
+%-------------------------------------------------------------------------------
+
+Data ukládaná v~databázích jsou stále více slo¾itìj¹í a~pro efektivnìj¹í
+získávání bývají obvykle transformována na vysocedimenzionální vektory rysù.
+V~mnoha aplikacích jsou tyto databáze velmi rozsáhlé a~obsahují miliony datových
+objektù s~desítkami a¾ stovkami dimenzí. Hlavní problém existujících pøístupù
+v~souvislosti se shlukováním je ten, ¾e mnoho algoritmù není navr¾eno pro
+shlukování vysocedimenzionálních vektorù rysù a~tak jejich výkonnost rychle
+degeneruje s~narùstajícím poètem dimenzí.
+
+Základní my¹lenkou pøístupu tohoto algoritmu je modelování celkové hustoty bodu
+analyticky jako souètu funkcí vlivu datových bodù. Shluky tak mohou být
+identifikovány stanovením atraktorù hustoty. Libovolné tvary shlukù mohou být
+snadno popsány jednoduchou rovnicí zalo¾enou na funkci celkové hustoty. Výhody
+tohoto pøístupu jsou:
+
+\begin{itemize}
+  \item Pevný matematický základ.
+  \item Dobré shlukovací vlastnosti pro datové sady s~velkým mno¾stvím ¹umu.
+  \item Umo¾òuje kompaktní matematický popis shlukù libovolných tvarù ve
+  vysocedimenzionálních datových sadách.
+  \item Je výraznì rychlej¹í ne¾ existující algoritmy.
+\end{itemize}
+
+Funkci vlivu (\ref{vliv}) lze vidìt jako funkci, která popisuje dopad datového
+bodu na jeho sousedství. Pøíklady funkcí vlivu jsou parabolické funkce,
+obdélníková funkce nebo Gaussova funkce. Funkce vlivu je aplikována na ka¾dý
+datový bod. Celkovou hustotu (\ref{hustota}) datového prostoru lze vypoèítat
+jako souèet funkcí vlivu v¹ech datových bodù. Shluky jsou urèeny matematicky
+identifikací atraktorù hustoty (\ref{atraktor}), co¾ jsou lokální maxima celkové
+funkce hustoty. Pokud je celková funkce hustoty spojitá a~má derivaci v~ka¾dém
+bodì, urèení atraktorù hustoty mù¾e být efektivnì provedeno pomocí algoritmu
+\emph{Hill-climbing} øízeného stoupáním (\ref{sklon}) celkové funkce hustoty.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/denclue1.eps}
+  \caption[Pøíklad funkcí hustoty.]{Pøíklad funkcí hustoty \cite{denclue1}.}
+  \label{fig:denclue1}
+\end{figure}
+
+Obrázek \ref{fig:denclue1} zobrazuje pøíklad sady datových bodù ve 2D prostoru
+spoleènì s~odpovídajícími funkcemi hustoty pro obdélníkovou a~Gaussovu funkci
+vlivu.
+
+Lze definovat dvì rùzné pojetí shlukù -- shluky definované støedem (\ref{stred})
+a~shluky libovolného tvaru (\ref{tvar}). Pro definice je tøeba pojem
+\emph{atraktor hustoty}. Atraktory hustoty jsou neformálnì lokální maxima
+celkové funkce hustoty a~proto je také tøeba definovat stoupání funkce hustoty.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/denclue2.eps}
+  \caption[Pøíklad atraktorù hustoty u~algoritmu DENCLUE.]{Pøíklad atraktorù
+  hustoty u~algoritmu DENCLUE \cite{denclue1}.}
+  \label{fig:denclue2}
+\end{figure}
+
+Obrázek \ref{fig:denclue2} zobrazuje pøíklad atraktorù hustoty
+v~jednodimenzionálním prostoru. Pro spojitou a~derivovatelnou funkci vlivu mù¾e
+být pou¾it jednoduchý gradientní algoritmus (hill-climbing) k~nalezení atraktorù
+hustoty datového bodu $x \in D$. Algoritmus je øízen stoupáním $f_B^D$.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/denclue3.eps}
+  \caption[Pøíklad shlukù definovaných støedem pro rùzné $\sigma$ algoritmu
+  DENCLUE.]{Pøíklad shlukù definovaných støedem pro rùzné $\sigma$ algoritmu
+  DENCLUE \cite{denclue1}.}
+  \label{fig:denclue3}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.5]{fig/denclue4.eps}
+  \caption[Pøíklad shlukù libovolného tvaru pro rùzná $\xi$ algoritmu DENCLUE]
+  {Pøíklad shlukù libovolného tvaru pro rùzná $\xi$ algoritmu DENCLUE
+  \cite{denclue1}.}
+  \label{fig:denclue4}
+\end{figure}
+
+Obrázek \ref{fig:denclue3} zobrazuje pøíklady shlukù definovaných støedem pro
+rùzné $\sigma$. Poèet nalezených shlukù je závislý na $\sigma$. Na obrázku
+\ref{fig:denclue4}a a~\ref{fig:denclue4}c jsou pøíklady funkcí hustoty zároveò
+s~rovinou pro rùzná $\xi$. Obrázky \ref{fig:denclue4}b a~\ref{fig:denclue4}d
+zobrazují výsledné shluky libovolného tvaru. Parametr $\sigma$ popisuje vliv
+datového bodu v~datovém prostoru a~$\xi$ popisuje, kdy je atraktor hustoty
+významný.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{V¹eobecnost}
+%-------------------------------------------------------------------------------
+
+Pøístup metody DENCLUE zobecòuje ostatní shlukovací pøístupy, zejména:
+\begin{itemize}
+  \item metody zalo¾ené na rozdìlování,
+  \item hierarchické metody,
+  \item metody zalo¾ené na lokalitì.
+\end{itemize}
+
+Pokud je pou¾ita obdélníková funkce vlivu se~$\sigma = \varepsilon$ a~mez
+odlehlých hodnot $\xi = MinPts$, definované shluky libovolných tvarù jsou stejné
+jako shluky nalezené metodou DBSCAN.
+
+Pou¾itím rùzných hodnot parametru $\sigma$ a~pojetím shlukù definovaných støedem
+podle definice 11 je mo¾né generovat hierarchii shlukù. S~velmi malou poèáteèní
+hodnotou $\sigma$ se získá $N^*$ shlukù. Zvý¹ením $\sigma$ se zaènou atraktory
+hustoty sluèovat a~tak se získá dal¹í úroveò hierarchie. Ka¾dým dal¹ím zvý¹ením
+hodnoty $\sigma$ se slouèí více a~více atraktorù hustoty, a¾ nakonec vznikne
+pouze jeden atraktor hustoty reprezentující koøen hierarchie.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Volba parametrù}
+%-------------------------------------------------------------------------------
+
+DENCLUE má dva dùle¾ité parametry: $\sigma$ a~$\xi$. Parametr $\sigma$ urèuje
+vliv bodu v~jeho okolí a~$\xi$ popisuje, zda je atraktor hustoty významný,
+umo¾òuje redukci poètu atraktorù hustoty a~zlep¹uje výkonnost.
+
+Výbìr dobrého $\sigma$ mù¾e být provedeno zvá¾ením rùzných $\sigma$ a~stanovením
+nej¹ir¹ího intervalu mezi $\sigma_{max}$ a~$\sigma_{min}$, kde poèet atraktorù
+hustoty $m(\sigma)$ zùstává konstantní. Shlukování vzniklé z~tohoto pøístupu
+lze pova¾ovat za pøirozenì adaptované na datovou sadu.
+
+Parametr $\xi$ je minimální úroveò hustoty pro atraktor hustoty, aby byl
+významným. Pokud je $\xi$ nastaveno na nulu, v¹echny atraktory hustoty,
+dohromady s~jejich datovými body atrakovanými na základì hustoty, budou urèeny
+jako shluky. Toto není ov¹em èasto ¾ádoucí, proto¾e se ka¾dý bod mù¾e stát svým
+vlastním shlukem (zvlá¹tì v~oblastech s~nízkou hustotou). Dobrá volba $\xi$
+pomù¾e algoritmu zamìøit se na hustì obsazené oblasti a~u¹etøit výpoèetní èas.
+
+Pro efektivní urèení shlukù je tøeba nalézt mo¾nost efektivního výpoètu funkce
+hustoty a~atraktorù hustoty. Dùle¾ité je zji¹tìní, ¾e výpoèet hustoty bodu
+$x \in F^d$ závisí pouze na tìch bodech datové sady, které jsou v~blízkosti $x$,
+a~pøispívají tak k~hustotì. V¹echny ostatní body mohou být zanedbány bez
+podstatné chyby.
+
+Lokální funkce hustoty (\ref{lokal}) je aproximací celkové funkce hustoty.
+My¹lenkou je brát v~úvahu pouze vliv blízkých bodù, zatímco je zanedbán vliv
+bodù vzdálených. Vzniká tak chyba, která je ov¹em zaruèenì v~úzkých mezích.
+K~definování lokální funkce hustoty je tøeba funkce $near(x)$, kde
+$x_1 \in near(x)\,:\,d(x_1,x) \leq \sigma_{near}$.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Algoritmus}
+%-------------------------------------------------------------------------------
+
+DENCLUE pracuje ve dvou krocích. První je pøedshlukovací krok, ve kterém je
+vytvoøena mapa relevantní èásti datového prostoru. Mapa je pou¾ita ke zrychlení
+výpoètu funkce hustoty, která vy¾aduje efektivní pøístup k~sousedním èástem
+datového prostoru. Druhý krok je shlukovací, v~nìm¾ algoritmus identifikuje
+atraktory hustoty a~odpovídající atrakované body na základì hustoty.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Krok 1}
+%-------------------------------------------------------------------------------
+
+Minimální ohranièující (hyper-)obdélník datové sady je rozdìlen na
+\emph{d}-dimenzionální hyperkrychle s~délkou hrany $2\sigma$. Uva¾ují se pouze
+hyperkrychle, které obsahují datové body. Poèet vzniklých krychlí je v~rozsahu
+1 a¾ $N^*$ v~závislosti na zvoleném $\sigma$, ale nezávisí na dimenzionalitì
+datového prostoru. Hyperkrychle jsou èíslovány podle jejich relativní pozice
+od poèátku. Tímto zpùsobem mohou být hyperkrychle mapovány na jednodimenzionální
+klíèe, které lze efektivnì ulo¾it do vyhledávacího nebo $B^+$ stromu. Pro ka¾dou
+krychli $c \in C_p$ je ulo¾en poèet jejich datových bodù ($N_c$), ukazatele na
+tyto body a~lineární souèet $\sum_{x\in c}x$. Tyto informace jsou vyu¾ity ve
+shlukovacím kroku pro rychlý výpoèet prùmìru krychle $mean(c)$. Proto¾e mù¾e být
+shluk rozprostøen pøes více krychlí, je nutný pøístup také k~sousedícím
+krychlím. Pro urychlení tohoto pøístupu jsou sousedící krychle propojeny. 
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Krok 2}
+%-------------------------------------------------------------------------------
+
+Pouze krychle s~vy¹¹í hustotou a~krychle s~nimi propojené jsou uva¾ovány pro
+hledání shlukù. Díky struktuøe z~pøedchozího kroku je mo¾né efektivnì vypoèítat
+lokální funkci hustoty $\hat{f}_{Gauss}^D(x)$. Stejnì tak lze vypoèítat lokální
+stoupání $\bigtriangledown\hat{f}_{Gauss}^D(x)$. K~urèení atraktorù hustoty ka¾dého
+bodu krychlí, zalo¾ených na lokální funkci hustoty a~stoupání, je pou¾ita metoda
+hill-climbing \cite{denclue1}.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{DENCLUE 2.0}
+%-------------------------------------------------------------------------------
+
+Nevýhodou pøedchozí verze algoritmu DENCLUE je, ¾e pou¾itá metoda hill-climbing
+mù¾e provádìt zbyteènì malé kroky na zaèátku a~nikdy nekonverguje k~maximu, ale
+pouze se k~nìmu blí¾í. Ve vylep¹ené verzi je velikost kroku automaticky
+upravována bez ztráty na rychlosti. Provádí se mnohem ménì iterací a~výpoèet lze
+urychlit metodami zalo¾enými na vzorkování pouze za cenu malé nepøesnosti
+\cite{denclue2}.
+
+
+%###############################################################################
+\chapter{Databáze proteinových rodin} \label{databases}
+%###############################################################################
+
+Skoro v¹echny proteiny mají strukturální podobnosti s~ostatními proteiny.
+V~mnoha pøípadech sdílejí spoleèný evoluèní pùvod. Znalost tìchto vztahù je
+významným pøínosem pro molekulární biologii a~dal¹í související oblasti vìdy.
+Jedná se o~støed na¹eho chápání struktury a~evoluce proteinù. Hraje dùle¾itou
+roli v~interpretaci sekvencí produkovaných genomovými projekty a~pro pochopení
+evoluèního vývoje.
+
+Stále rostoucí poèet proteinù, jejich¾ struktury byly získávány rentgenovou
+krystalografií a~NMR\footnote{Nuclear magnetic resonance} spektroskopií, si
+vy¾ádal vznik proteinových databází, které usnadòují chápání a~pøístup k~tìmto
+informacím \cite{scop}.
+
+
+%*******************************************************************************
+\section[SCOP]{SCOP\protect\footnote{Structural Classification of Proteins.}}
+\label{scop}
+%*******************************************************************************
+
+Databáze poskytující detailní a~komplexní popis strukturálních a~evoluèních
+vztahù mezi proteiny, u~kterých je známa jejich struktura. Pro vytvoøení
+klasifikace proteinù v~této databázi se zásadnì pou¾ívá vizuální kontrola
+a~porovnání struktur. Aby byla tato úloha zvládnutelná, vyu¾ívají se rùzné
+automatické nástroje pomáhající zajistit obecnost. Jednotkou pro klasifikaci je
+zpravidla proteinová doména. Malé proteiny, a~vìt¹ina støední velikosti, mají
+jedinou doménu a~jsou proto pova¾ovány za celek. Domény ve vìt¹ích proteinech se
+obvykle klasifikují zvlá¹».
+
+Klasifikace je na hierarchické úrovni, která vyjadøuje evoluèní a~strukturální
+vztahy:
+
+\begin{itemize}
+  \item \textbf{Rodina} -- proteiny jsou shlukovány do rodin na základì jednoho
+  ze dvou kritérií: v¹echny proteiny mají identitu residuí alespoò 30\,\%, nebo
+  proteiny s~ni¾¹í identitou mají velmi podobnou funkci a~strukturu.
+  \item \textbf{Superrodina} -- rodiny, jejich¾ proteiny mají ni¾¹í identitu,
+  ale jejich struktury, v~mno\-ha pøípadech i~funkèní vlastnosti, naznaèují, ¾e
+  je pravdìpodobný spoleèný evoluèní pùvod, jsou zaøazeny do jedné superrodiny.
+  \item \textbf{Spoleèný ,,tvar'' (fold)} -- superrodiny a~rodiny jsou
+  definované jako se spoleèným tvarem, pokud jejich proteiny mají stejnou
+  sekundární strukturu ve stejném uspoøádání se stejnými spojeními. Rùzné
+  proteiny se stejným tvarem mají obvykle obvodové prvky sekundární struktury
+  a~regiony otáèek, které se li¹í svou velikostí a~prostorovým uspoøádáním.
+  V~pøípadech vìt¹í odli¹nosti mohou tyto li¹ící se regiony tvoøit více ne¾
+  polovinu ka¾dé struktury. Strukturální podobnosti pro proteiny zaøazené do
+  stejného tvaru pravdìpodobnì vznikají z~fyzikálních a~chemických vlastností
+  proteinù, které upøednostòují jisté uspoøádání sbalení a~topologie øetìzce.
+  \item \textbf{Tøída} -- rùzné tvary jsou pro u¾ivatelský komfort seskupeny
+  do tøíd:
+    \begin{enumerate}
+      \item \textbf{V¹e alfa} -- pro proteiny, jejich¾ struktura je v~zásadì
+      slo¾ena z~$\alpha$-spirál.
+      \item \textbf{V¹e beta} -- struktura je v~zásadì slo¾ena z~$\beta$-listù.
+      \item \textbf{Alfa a~beta} -- $\alpha$-spirály a~$\beta$-listy jsou
+      z~velké èásti prolo¾ené.
+      \item \textbf{Alfa + beta} -- $\alpha$-spirály a~$\beta$-listy jsou
+      z~velké èásti oddìlené.
+      \item \textbf{Vícedoménové} -- obsahující domény z~rùzných tvarù, pro
+      které nejsou v~souèasné dobì známé homology.
+    \end{enumerate}
+    Ménì obvyklé proteiny, peptidy a~PDB záznamy pro navr¾ené proteiny,
+    teoretické modely, nukleové kyseliny a~karbohydráty byly zaøazeny do dal¹ích
+    tøíd.
+\end{itemize}
+
+Ka¾dý záznam v~databázi má k~dispozici odkazy na souøadnice a~obrázky struktury,
+interaktivní molekulární prohlí¾eèe, data sekvence a~referenèní literaturu. Lze
+také provádìt dva druhy vyhledávání:
+
+\begin{itemize}
+  \item K~vyhledání homologií mù¾e u¾ivatel zadat sekvenci a~získá seznam
+  struktur, které jí jsou vyznámnì podobné.
+  \item Hledání shod u¾ivatelem zadaného klíèového slova v~textu SCOP databáze
+  a~v~hlavièkách strukturních souborù.
+\end{itemize}
+
+Databáze je volnì pøístupná na adrese \url{http://scop.mrc-lmb.cam.ac.uk/scop/}
+\cite{scop}, její dal¹í vývoj byl ov¹em ukonèen verzí 1.75. Obsahuje manuálnì
+klasifikované struktury, tzn. ¾e ka¾dou strukturu musel posoudit a~zaøadit
+zku¹ený biolog. Statistiky databáze SCOP 1.75 z~èervna 2009, obsahující 110\,800
+domén, jsou uvedeny v~tabulce
+\ref{tab:scop}.
+
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|r|r|}
+    \hline
+    \multirow{2}{*}{\textbf{Tøída}} & \multicolumn{3}{|c|}{\textbf{Poèet}} \\
+    \cline{2-4}
+     & \textbf{tvarù} & \textbf{superrodin} & \textbf{rodin} \\
+    \hhline{|=|=|=|=|}
+    a: V¹e alfa proteiny & 284 & 507 & 871 \\
+    \hline
+    b: V¹e beta proteiny & 174 & 354 & 742 \\
+    \hline
+    c: Alfa a~beta proteiny & 147 & 244 & 803 \\
+    \hline
+    d: Alfa + beta proteiny & 376 & 552 & 1\,055 \\
+    \hline
+    e: Vícedoménové proteiny & 66 & 66 & 89 \\
+    \hline
+    f: Proteiny a~peptidy membrán a~bunìèného povrchu & 58 & 110 & 123 \\
+    \hline
+    g: Malé proteiny & 90 & 129 & 219 \\
+    \hhline{|=|=|=|=|}
+    \textbf{Celkem} & \textbf{1\,195} & \textbf{1\,962} & \textbf{3\,902} \\
+    \hline
+  \end{tabular}
+  \caption{Statistiky databáze SCOP 1.75.}
+  \label{tab:scop}
+\end{table}
+
+
+%*******************************************************************************
+\section[SCOP2]{SCOP2\protect\footnote{Structural Classification of Proteins
+2.}} \label{scop2}
+%*******************************************************************************
+
+SCOP2 je nástupcem databáze SCOP a~slou¾í ke stejnému úèelu. Byla navr¾ena
+k~poskytování pokroèilej¹ího aplikaèního rámce pro anotaci a~klasifikaci
+proteinových struktur. Definuje nový pøístup ke klasifikaci proteinù, který se
+od pùvodní SCOP zásadnì li¹í, ale zachovává její nejlep¹í vlastnosti.
+Klasifikace je popsána orientovaným acyklickým grafem (obrázek \ref{fig:scop2}),
+jeho¾ uzly tvoøí komplexní sí» vztahù ,,mnoho k~mnoha'' a~jsou reprezentovány
+regionem proteinové struktury a~sekvence. Dùle¾ité je, ¾e tato struktura mù¾e
+obsahovat více ne¾ jeden rodièovský uzel pro uzel potomka.
+
+Vztahy ve SCOP2 spadají do ètyø velkých kategorií. Dvì z~nich, \emph{Proteinové
+typy} a~\emph{Evoluèní události}, nemají protìj¹ky v~pùvodní SCOP databázi:
+\begin{itemize}
+  \item \emph{Proteinové typy} -- proteiny jsou rozdìleny do ètyø hlavních
+  typù: rozpustný, membránový, vláknitý a~vnitønì nezøízený, z~nich¾ ka¾dý do
+  znaèné míry koreluje s~charakteristikou sekvence a~strukturními vlastnostmi.
+  \item \emph{Evoluèní události} -- smìøují k~usnadnìní anotace rùzných
+  strukturálních uspoøádání a~zvlá¹tností, které byly pozorovány mezi pøíbuznými
+  proteiny a~daly vzniknout podstatným strukturálním rozdílùm.
+  \item \emph{Strukturální tøídy} -- organizují proteinové tvary pøesnì podle
+  jejich sekundárního strukturálního obsahu. Staly se atributem proteinového
+  tvaru a~proto je nezávislé na proteinovém evoluèním vztahu. Podobné tvary
+  s~odli¹nou sekundární strukturou jsou umístìny do rùzných tøíd.
+  \item \emph{Proteinové vztahy} se skládají ze tøí podkategorií:
+  \begin{itemize}
+    \item \emph{strukturální},
+    \item \emph{evoluèní},
+    \item \emph{ostatní}.
+  \end{itemize}
+  Vztah \emph{ostatní} má za cíl definovat a~anotovat vztahy, jako napø. interní
+  strukturální repetice, spoleèné motivy a~podtvary, které nebyly pøedmìtem
+  klasifikace ve SCOP.
+\end{itemize}
+
+Evoluèní vztahy \emph{druhy}, \emph{protein}, \emph{rodina} a~\emph{superrodina}
+ze SCOP jsou zachovány, ale jejich obsah a~definice se li¹í:
+\begin{itemize}
+  \item \emph{Druhy} -- korespondují s~individuálním genovým produktem a~jsou
+  reprezentovány jejich plnou délkou sekvence.
+  \item \emph{Protein} -- seskupuje ortologní proteiny a~je definován jako
+  podsekvence, která mù¾e být nalezena samostatnì.
+  \item \emph{Rodina} -- koresponduje s~konzervovaným regionem sekvence sdíleným
+  úzce souvisejícími proteiny.
+  \item \emph{Superrodina} -- reprezentována spoleèným strukturálním regionem
+  sdíleným rùznými proteinovými rodinami.
+\end{itemize}
+Dùle¾ité je, ¾e domény reprezentující úroveò rodiny a~superrodiny mohou
+zasahovat do více ne¾ jedné strukturální domény. Kromì toho se zavádí nová
+úroveò \emph{Hyperrodina}, pøedev¹ím k~pokrytí nejobsáhlej¹ích a~strukturálnì
+rùznorodých SCOP superrodin. Pozoruhodným rozdílem mezi SCOP a~SCOP2 je to,
+¾e tyto odli¹né úrovnì nejsou povinné.
+
+Klasifikace SCOP2 je zalo¾ena na reprezentativních sekvencích a~strukturách.
+Jejich manuální anotace je pak automaticky roz¹íøena o~související záznamy
+\cite{scop2}. Databázi lze volnì získat z~\url{http://scop2.mrc-lmb.cam.ac.uk/}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/scop2.eps}
+  \caption[Porovnání grafù databází SCOP a~SCOP2.]{Porovnání grafù databází SCOP
+  a~SCOP2. Vlevo je èást hierarchického stromu SCOP, kde je klasifikace do
+  ¹esti povinných úrovní: \emph{Proteinový druh} (SP), \emph{Protein} (PR),
+  \emph{Rodina} (FA), \emph{Superrodina} (SF), \emph{Tvar} (CF)
+  a~\emph{Tøída} (CL). Homologní proteiny s~odli¹nými tvary jsou nucenì
+  zaøazeny do stejné rodiny a~také postupnì do stejné superrodiny, tvaru
+  a~tøídy. Na ka¾dé úrovni je povinný uzel od koøene k~listu, i~kdy¾ tento uzel
+  nereprezentuje ¾ádný aktuální vztah. Vpravo ve SCOP2 jsou strukturální
+  a~evoluèní vztahy oddìleny, umo¾òují tak klasifikaci homologních proteinù do
+  rùzných tvarù a~strukturálních tøíd se zachováním jejich stejné evoluèní
+  rodiny a~superrodiny. Nepovinné jedno-potomkové uzly jsou vynechány. Nová
+  specifická kategorie \emph{ostatní vztahy} (IR) je na grafu také zobrazena.
+  Tyto vztahy zahrnují (ale nejsou omezené na) nehierarchické vztahy mezi
+  homologními a~nehomologními proteiny rùzných tvarù sdílejících velké
+  spoleèné podstruktury nebo motivy \cite{scop2}.}
+  \label{fig:scop2}
+\end{figure}
+
+
+%*******************************************************************************
+\section[SCOPe]{SCOPe\protect\footnote{Structural Classification of
+Proteins--extended.}} \label{scope}
+%*******************************************************************************
+
+Databáze proteinových strukturálních vztahù, která roz¹iøuje poslední verzi 1.75
+pùvodní databáze SCOP. Pomocí metod automatizované správy klasifikuje mnoho
+struktur vydaných od této poslední verze. SCOPe je také èásteènì manuálnì
+spravována pro opravení nìkterých chyb. Sna¾í se být zpìtnì kompatibilní
+a~poskytující stejné zpracovatelné soubory a~historii zmìn mezi v¹emi stabilními
+vydáními \cite{scope}.
+
+Zdarma lze databázi získat na \url{http://scop.berkeley.edu/}. Statistiky
+poslední verze databáze SCOPe 2.05 z~února 2015, obsahující 203\,026 domén, jsou
+uvedeny v~tabulce \ref{tab:scope}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|r|r|}
+    \hline
+    \multirow{2}{*}{\textbf{Tøída}} & \multicolumn{3}{|c|}{\textbf{Poèet}} \\
+    \cline{2-4}
+     & \textbf{tvarù} & \textbf{superrodin} & \textbf{rodin} \\
+    \hhline{|=|=|=|=|}
+    a: V¹e alfa proteiny & 286 & 509 & 1037 \\
+    \hline
+    b: V¹e beta proteiny & 176 & 359 & 931 \\
+    \hline
+    c: Alfa a~beta proteiny & 148 & 245 & 965 \\
+    \hline
+    d: Alfa + beta proteiny & 381 & 558 & 1\,301 \\
+    \hline
+    e: Vícedoménové proteiny & 68 & 68 & 109 \\
+    \hline
+    f: Proteiny a~peptidy membrán a~bunìèného povrchu & 57 & 113 & 153 \\
+    \hline
+    g: Malé proteiny & 92 & 132 & 260 \\
+    \hhline{|=|=|=|=|}
+    \textbf{Celkem} & \textbf{1\,208} & \textbf{1\,984} & \textbf{4\,756} \\
+    \hline
+  \end{tabular}
+  \caption{Statistiky databáze SCOPe 2.05.}
+  \label{tab:scope}
+\end{table}
+
+
+%*******************************************************************************
+\section[Pfam]{Pfam\protect\footnote{Protein families.}} \label{pfam}
+%*******************************************************************************
+
+Jednou z~hlavních výzev pøi vytváøení proteinových databází je souèasné splnìní
+protichùdných po¾adavkù úplnosti na jedné stranì a~kvality zarovnání a~definic
+domén na stranì druhé. Poslední jmenované vlastnosti se øe¹í v~nejlep¹ím
+pøípadì manuálním pøístupem, zatímco úplnost je v~praxi pøedmìtem pouze
+automatických metod. Pfam má základ ve skrytých markovských modelech
+(HMMs\footnote{Hidden Markov Models.}), které kombinují vysokou kvalitu
+a~úplnost.
+
+Databáze se skládá z~èástí A a~B. Pøesná Pfam-A obsahuje dobøe charakterizované
+rodiny proteinových domén s~vysoce kvalitním zarovnáním. Zachovává si pou¾ití
+manuální kontroly zarovnání semínek a~vyu¾ívá HMMs k~nalezení a~zarovnání v¹ech
+jejich èlenù. Pfam-B obsahuje rodiny sekvencí, které byly vygenerovány
+automaticky aplikací shlukovacího algoritmu, a~zarovnání zbývajících
+proteinových sekvencí po odstranìní domén nacházejících se v~Pfam-A.
+Dohromady tedy tvoøí kompletní celek shlukù proteinových sekvencí. Snahou je
+postupnì pøevést nejvìt¹í rodiny z~Pfam-B do Pfam-A \cite{pfam}.
+
+Databáze je zdarma k~dispozici na~webu \url{http://pfam.xfam.org/}. Statistiky
+Pfam 27.0 z~bøez\-na 2013 jsou uvedeny v~tabulce \ref{tab:pfam}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|r|r|}
+    \hline
+    \multirow{2}{*}{\textbf{Èást}} & \multicolumn{3}{|c|}{\textbf{Poèet}} \\
+    \cline{2-4}
+     & \multicolumn{1}{|c|}{\textbf{rodin}} & \multicolumn{1}{|c|}{\textbf{sekvencí}} & \multicolumn{1}{|c|}{\textbf{residuí}} \\
+    \hhline{|=|=|=|=|}
+    Pfam-A & 14\,831 & 18\,523\,877 & 4\,413\,005\,459 \\
+    \hline
+    Pfam-B & 544\,866 & 3\,843\,092 & 427\,492\,613 \\
+    \hhline{|=|=|=|=|}
+    \textbf{Celkem} & \textbf{559\,697} & \textbf{22\,366\,969} & \textbf{4\,840\,498\,072} \\
+    \hline
+  \end{tabular}
+  \caption{Statistiky databáze Pfam 27.0.}
+  \label{tab:pfam}
+\end{table}
+
+
+%*******************************************************************************
+\section[CATH]{CATH\protect\footnote{Class, Architecture, Topology, Homology.}}
+\label{cath}
+%*******************************************************************************
+
+Databáze CATH pou¾ívá proteinovou strukturu jako citlivou sondu pro vzdálené
+evoluèní vztahy a~také pro poskytnutí dal¹í vrstvy náhledu na vztah mezi
+sekvencí a~její funkcí. Je to hierarchická klasifikace proteinových domén, proto
+se struktury rozdìlí na jednotlivé domény. Pokud existuje dostateèný dùkaz, ¾e
+mno¾ina domén zøetelnì sdílí spoleèného pøedka, jsou seskupeny do jedné
+homologní superrodiny. Kdy¾ homologní superrodiny (úroveò ,,H'') sdílí stejný
+tvar, ale neexistuje dostateèný dùkaz o~jednoznaèném evoluèním vztahu,
+umístí se do stejné topologie (úroveò ,,T''). Topologie, které sdílejí pøibli¾nì
+podobné prostorové uspoøádání sekundární struktury, se seskupí do stejné
+architektury (úroveò ,,A''). 40 architektur databáze CATH je uspoøádáno do jedné
+ze 4 hlavních tøíd (úroveò ,,C'') na základì obsahu sekundární struktury:
+
+\begin{itemize}
+  \item pøevá¾nì alfa,
+  \item pøevá¾nì beta,
+  \item smí¹ené alfa a~beta,
+  \item málo sekundárních struktur.
+\end{itemize}
+
+CATH lze získat z~\url{http://www.cathdb.info/} také zcela zdarma \cite{cath}.
+Statistické údaje o~její poslední verzi 4.0, zalo¾ené na datech z~bøezna 2013,
+jsou shrnuty v~tabulce \ref{tab:cath}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|r|r|r|}
+    \hline
+    \multirow{2}{*}{\textbf{Tøída}} & \multicolumn{4}{|c|}{\textbf{Poèet}} \\
+    \cline{2-5}
+     & \textbf{architektur} & \textbf{topologií} & \textbf{superrodin} & \textbf{domén} \\
+    \hhline{|=|=|=|=|=|}
+    1 & 5 & 397 & 907 & 48\,121 \\
+    \hline
+    2 & 20 & 241 & 547 & 58\,944 \\
+    \hline
+    3 & 14 & 626 & 1\,158 & 125\,772 \\
+    \hline
+    4 & 1 & 111 & 126 & 3\,021 \\
+    \hhline{|=|=|=|=|=|}
+    \textbf{Celkem} & \textbf{40} & \textbf{1\,375} & \textbf{2\,738} & \textbf{235\,858} \\
+    \hline
+  \end{tabular}
+  \caption{Statistiky databáze CATH 4.0.}
+  \label{tab:cath}
+\end{table}
+
+%###############################################################################
+\chapter{Nedostatky souèasných algoritmù} \label{deficits}
+%###############################################################################
+
+Kapitola \ref{principles} popisuje známìj¹í a~pou¾ívanìj¹í algoritmy pro
+shlukování proteinù. Vìt¹ina se týká zajímavých pøístupù a~heuristik, které byly
+vytvoøeny s~cílem dosáhnout rozumné pøesnosti na velké vstupní datové sadì.
+Obvykle je to v¾dy kompromis mezi pøesností a~výpoèetní nároèností, který mù¾e
+ovlivnit kvalitu výsledkù. Za hlavní nedostatky lze pova¾ovat pøedev¹ím zpùsob
+vzájemného porovnávání sekvencí, jejich zaøazování do shlukù a~ukonèování
+samotného procesu shlukování.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Identita sekvencí}
+%-------------------------------------------------------------------------------
+
+Porovnávání sekvencí se v~mnoha pøípadech øídí identitou (\ref{uclust},
+\ref{cdhit}, \ref{upgma}) mezi èástmi jednotlivých proteinù, která v~tomto
+pøípadì není nejvhodnìj¹ím mìøítkem. Mnohem lep¹ím zpùsobem porovnávání je
+zamìøit se na podobnost tìchto èástí, aby byly zohlednìny pøípadné jednobodové
+(èi vícebodové) zámìny jednotlivých aminokyselin. Mù¾e nastat situace, ¾e
+zamìnìné aminokyseliny plní v~daném proteinu velice podobnou, nebo dokonce
+identickou funkci.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Slo¾itost algoritmu}
+%-------------------------------------------------------------------------------
+
+Nároènost výpoètu samotného porovnávání je také problémem. Èasto dochází
+k~porovnávání ka¾dé vstupní sekvence se v¹emi ostatními vstupními sekvencemi
+(\ref{upgma}, \ref{nejo}). Takový proces má slo¾itost $O(N^2)$ a~trvá velmi
+dlouho. Ve vìt¹inì pøípadù je i~zbyteèný, proto¾e nìkteré sekvence mají
+s~dal¹ími spoleèného velmi málo. Pokud algoritmus vyu¾ívá na svém poèátku výbìr
+reprezentantù, tzv. centroidù (\ref{uclust}, \ref{cdhit}, \ref{kclust})
+nebo semínek (\ref{mbed}), nedochází k~tolika porovnáním, ale stále lze tento
+poèet redukovat. Odpovìdí na rychlej¹í porovnávání mù¾e být algoritmus tøídící
+vstupní sekvence urèitým filtrem (\ref{uclust}, \ref{cdhit}, \ref{kclust}),
+aby rozeznal, které bude nebo nebude mezi sebou porovnávat. Ov¹em pro získání
+kvalitnìj¹ího výsledku se lze smíøit s~vìt¹í èasovou nároèností.
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Princip shlukování}
+%-------------------------------------------------------------------------------
+
+Pomocí identity je provádìno i~samotné shlukování (\ref{uclust}, \ref{cdhit},
+\ref{upgma}), které mù¾e být ménì pøesné. Pøedpokládá se, ¾e v¹echny shluky
+budou mít uvnitø stejnou míru identity, tak¾e jsou v¹echny sekvence porovnávány
+a~seskupovány pøi pøekroèení nìjaké, pro v¹echny shluky stejné, prahové hodnoty.
+Tento pøístup neøe¹í situaci, kdy jsou rùzné shluky vnitønì identické s~rùzným
+prahem, popø. zmínìnou podobností. Navíc mnoho algoritmù neumí pracovat na
+identitách pod 30--40\,\% (\ref{uclust}, \ref{cdhit}). Bylo by vhodné vyu¾ít
+takový zpùsob shlukování, který není závislý na u¾ivatelem zadané vstupní
+hodnotì identity, popø. ani podobnosti, a~zároveò by dokázal pracovat se
+sekvencemi s~pùvodním významem identity pod 30--40\,\% (\ref{kclust}).
+
+%-------------------------------------------------------------------------------
+\subsubsection*{Ukonèující podmínka algoritmu}
+%-------------------------------------------------------------------------------
+
+Za jeden z~posledních problémù mù¾eme pova¾ovat definovanou podmínku ukonèení
+algoritmu. Nìkteré vy¾adují u¾ivatelem zadaný poèet výsledných shlukù (k-means),
+jiné konèí pøi dosa¾ení ji¾ zmínìného prahu identity ve v¹ech shlucích
+(\ref{uclust}, \ref{cdhit}) apod. Algoritmus musí být ukonèen, pokud jsou
+v¹echny sekvence pøiøazeny svým adekvátním shlukùm, ale pøípadné odlehlé hodnoty
+zùstávají osamoceny, tj. ka¾dá odlehlá hodnota patøí do svého shluku
+(\ref{dbscan}, \ref{denclue}).
+
+\bigskip
+
+Pravdìpodobnì nelze nalézt metodu, která by absolutnì øe¹ila v¹echny zde zmínìné
+nedostatky souèasnì, ale je tøeba co nejvíce sní¾it negativní dopady na výsledek
+shlukování vìt¹iny z~nich.
+
+
+%###############################################################################
+\chapter{Návrh vlastního nástroje} \label{design}
+%###############################################################################
+
+Snahou je odstranit co nejvíce a~co nejlépe souèasné nedostatky uvedené
+v~pøedchozí kapitole \ref{deficits}. Pøi shlukování chceme získat pøedev¹ím
+pøesné shluky, a~to i~za cenu vìt¹í èasové nároènosti. V~této kapitole je
+uveden návrh vlastního øe¹ení shlukování, které se toho pokusí po implementaci
+dosáhnout.
+
+Shlukovací nástroj lze rozdìlit na dvì hlavní èásti: výpoèet vzdáleností mezi
+sekvencemi a~následné shlukování na základì tìchto vzdáleností. Schéma
+základních krokù nástroje zobrazuje schéma \ref{nastroj}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/nastroj.eps}
+  \caption{Schéma základních krokù shlukovacího nástroje.}
+  \label{nastroj}
+\end{figure}
+
+%*******************************************************************************
+\section{Podobnost sekvencí}
+%*******************************************************************************
+
+Porovnávání sekvencí na základì identity bude nahrazeno porovnáváním na
+podobnost, které by mìlo být ve vztahu pøíbuznosti proteinù pøesnìj¹í, proto¾e
+mù¾ou obsahovat chybu v~podobì zámìny, vlo¾ení nebo odstranìní aminokyseliny ze
+sekvence. Optimální algoritmy zarovnávání mají ov¹em kvadratickou slo¾itost
+a~jsou nevhodné zvlá¹tì pro rozsáhlé vstupní sady, bude tedy nutné pou¾ít
+nìkterou rychlej¹í heuristiku. Dvì takové heuristiky jsou
+FASTA\footnote{FAST-All.} a~BLAST\footnote{Basic Local Alignment Search Tool}.
+Obì provádí lokální zarovnání. FASTA na svém zaèátku vyhledává pouze identické
+segmenty v~sekvencích a~následnì je propojuje do vìt¹ích oblastí. Prohledávání
+má citlivìj¹í a~výsledné zarovnání pøesnìj¹í. Oproti BLASTu vy¾aduje ale více
+výpoèetního èasu. BLAST naopak pracuje s~chybami aminokyselin hned a~o~nìco
+rychleji. Jeho hlavním principem je roz¹iøování nalezených výskytù. Pøi
+experimentování budou vyzkou¹eny oba pøístupy.
+
+Jádrem pro výpoèet podobností mezi v¹emi sekvencemi bude algoritmus mBed popsaný
+v~podkapitole \ref{mbed}. Jednou z~jeho hlavních výhod je rychlý výpoèet
+podobnosti pro v¹echny sekvence vstupní sady, kdy se neprovádí vzájemné
+porovnávání ka¾dé s~ka¾dou. Algoritmus má podmínku, ¾e vstupní sekvence musí být
+seøazeny sestupnì podle jejich délky v~aminokyselinách. Pokud nebudou seøazeny
+od u¾ivatele, nástroj tento stav detekuje a~seøazení provede automaticky.
+
+Na zaèátku algoritmus vybere vzorek $t = (log_2N)^2$ sekvencí. Jednotlivé
+sekvence do vzorku jsou vybírány z~ji¾ seøazených, a~to s~konstantním krokem.
+Krok ov¹em nelze nastavit pevnì, proto¾e by se poøadí vybírané sekvence mohlo
+dostat mimo poèet, který je na vstupu, nebo by byl vybrán pouze ze zaèátku velmi
+dlouhé vstupní sady. Velikost kroku bude tedy stanovena z~poètu sekvencí na
+vstupu jako $s = log_{10}N$. Vzorky budou je¹tì vzájemnì porovnány, zda si
+nejsou s~urèitou (implicitnì nulovou) prahovou hodnotou podobné. Z~podobných
+vzorkù se vylouèí ten krat¹í.
+
+V~dal¹ím kroku algoritmu je ka¾dé sekvenci pøiøazen $t$-rozmìrný vektor.
+Jednotlivé souøadnice vektoru reprezentují podobnost dané sekvence s~$t$ vzorky.
+Vzdálenost takových vektorù sekvencí by mìla být velmi blízká jejich podobnosti.
+Schéma algoritmu vektorizace znázoròuje obrázek \ref{seminka}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/seminka.eps}
+  \caption{Schéma algoritmu vektorizace sekvencí.}
+  \label{seminka}
+\end{figure}
+
+%*******************************************************************************
+\section{Algoritmus shlukování} \label{compute}
+%*******************************************************************************
+
+Shlukování je druhou dùle¾itou èástí a~hlavním zamìøením práce na nástroji.
+Proto¾e se bude sna¾it produkovat shluky s~rùznou vnitøní podobností, byl vybrán
+princip shlukování na základì hustoty, které nabízí algoritmy DBSCAN
+(\ref{dbscan}) a~DENCLUE (\ref{denclue}). Tyto algoritmy konèí, pokud nelze
+slouèit ¾ádné dva dosud objevené shluky. Mù¾ou tak vzniknout shluky rùzných
+tvarù a~rùzných vnitøních podobností. DBSCAN bude pou¾ívat základní obdélníkovou
+funkci pro urèení sousedù v~okolí bodu, tzn. vzdálenost dvou bodù se porovná
+pouze s~hodnotou $\varepsilon$. DENCLUE pracuje s~funkcí hustoty a~vlivu bodu na
+jeho okolí. Obì funkce budou implementovány jako Gaussovy s~parametrem $\sigma$.
+DENCLUE navíc pou¾ívá algoritmus hill-climbing, který bude v~jeho základní
+verzi, tj. bez heuristiky pro výpoèet velikosti následujícího kroku. Diagram
+prùbìhu a~ukonèení algoritmu shlukování na základì hustoty je na obrázku
+\ref{slouceni}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.4]{fig/slouceni.eps}
+  \caption{Diagram algoritmu shlukování na základì hustoty.}
+  \label{slouceni}
+\end{figure}
+
+
+%*******************************************************************************
+\section{Vstup a~výstup} \label{io}
+%*******************************************************************************
+
+Vstupem bì¾nì pou¾ívaných programù pro shlukování bývá FASTA soubor se
+sekvencemi. Nový nástroj bude tedy naèítat sekvence ve stejném formátu. Navíc
+bude mít mo¾nost naèítat ji¾ vypoèítané vektory s~podobnostmi, aby je nebylo
+nutné pro stejnou datovou sadu poèítat stále znovu. Výsledek výpoètu vektorù se
+pøi pou¾ití stejného principu zarovnání na stejnou datovou sadu neli¹í, tzn. ¾e
+je deterministický. Pøíklad záznamù tøí sekvencí z~databáze SCOP 1.75
+(\ref{scop}) ve FASTA souboru:
+
+\begin{verbatim}
+>d2hmva1 c.2.1.9 (A:7-140) Ktn bsu222 {Bacillus subtilis [TaxId: 1423]}
+kqfaviglgrfggsivkelhrmghevlavdineekvnayasyathavianateenellsl
+girnfeyvivaiganiqastlttlllkeldipniwvkaqnyyhhkvlekigadriihpek
+dmgvkiaqslsden
+>d1j75a_ a.4.5.19 (A:) Dlm-1 {Mouse (Mus musculus) [TaxId: 10090]}
+nleqkilqvlsddggpvkigqlvkkcqvpkktlnqvlyrlkkedrvsspepatwsig
+>d2fg5a1 c.37.1.8 (A:3-167) Rab31 {Human (Homo sapiens) [TaxId: 9606]}
+irelkvcllgdtgvgkssivcrfvqdhfdhnisptigasfmtktvpcgnelhkfliwdta
+gqerfhslapmyyrgsaaavivyditkqdsfytlkkwvkelkehgpenivmaiagnkcdl
+sdirevplkdakeyaesigaivvetsaknainieelfqgisrqip
+\end{verbatim}
+
+Hlavním výstupem musí být shluky urèené algoritmem. Formát tìchto souborù by mìl
+být co nejjednodu¹¹í, ale zároveò dobøe interpretovatelný. Dal¹ím výstupním
+formátem budou vypoèítané vektory pro jednotlivé sekvence, aby je bylo mo¾né
+znovu pou¾ít pøi dal¹ích bìzích algoritmu.
+
+
+%###############################################################################
+\chapter{Implementace} \label{implementation}
+%###############################################################################
+
+Program s~øe¹ením vlastního nástroje je naimplementován v programovacím jazyce
+Java. K~diplomové práci bylo potøeba pou¾ít i~nìkolik pomocných skriptù (napø.
+pro pøevod souborù se shluky do jednotného formátu, spou¹tìní externích
+aplikací), které jsou napsány ve skriptovacím jazyce Python, popø. v~Bashi
+(\ref{help}). Tato kapitola rozebírá zpùsob øe¹ení jednotlivých programových
+souèástí praktické èásti práce. Informace o~pou¾itých tøídách Javy jsou èerpány
+z~její dokumentace\footnote{\url{https://docs.oracle.com/javase/}}.
+
+%*******************************************************************************
+\section{Formáty datových souborù} \label{format}
+%*******************************************************************************
+
+Nástroj pracuje se dvìma vlastními formáty datových souborù. Jedním pro výsledné
+shluky a~druhým pro zápis vytvoøených vektorù.
+
+%-------------------------------------------------------------------------------
+\subsection*{Jednotný formát souborù se shluky} \label{cls}
+%-------------------------------------------------------------------------------
+
+Výstupy implementovaného nástroje budou porovnávány s~výstupy algoritmù UCLUST
+a~CD-HIT. Aby bylo vzájemné porovnávání výsledných sad shlukù jednodu¹¹í, byly
+implementovány skripty \texttt{uc2cls} a~\texttt{clstr2cls}. Ty pøevádìjí jejich
+výstupy na stejný formát, jako má navr¾ený nástroj. Porovnání dvou sad shlukù na
+podobnost je mo¾né skriptem \texttt{2ClsSimilarity}.
+
+Pro jednotný formát CLS byl zvolen jednoduchý tabulkový zápis v~podobì
+CSV\footnote{Comma-Separated Values, èárkami oddìlené hodnoty.}, kdy ka¾dý øádek
+souboru pøedstavuje jeden shluk. Názvy sekvencí zaøazených do shluku (le¾ícího
+na jednom øádku) nejsou ov¹em vzájemnì oddìleny èárkou, ale støedníkem, proto¾e
+se èárka pou¾ívá pro zápis desetinného èísla. Formát díky své jednoduchosti
+nezvìt¹uje velikost souborù dal¹ími znaky.
+
+Pøíklad obsahu souboru se tøemi shluky, které zahrnují postupnì 1, 2 a~3
+sekvence:
+
+\begin{verbatim}
+  d1eyxb_
+  d2aa1b1;d1h97a_
+  d1mbaa_;d1q1fa_;d1wdka2
+\end{verbatim}
+
+%-------------------------------------------------------------------------------
+\subsection*{Vypoèítané vektory} \label{vector}
+%-------------------------------------------------------------------------------
+
+Po vektorizaci vstupních sekvencí je mo¾né jejich vektory zapsat do výstupního
+souboru, pøípadnì vytvoøit vlastní vektory a~nástrojem naèíst pro následné
+shlukování. Formát vektorù opìt pou¾ívá zápis CSV, kde v~prvním sloupci oèekává
+název sekvence a~poté seznam jeho souøadnic oddìlených také støedníkem.
+
+Pøíklad souboru se~ètyømi vektory:
+
+\begin{verbatim}
+d2mysa2;0;32.9;32.9;18.2;31.2;50;20
+d1kk8a2;21.9;31.4;31.8;14.3;18.2;56.4;40
+d1w7ja2;42;37.6;37.9;38.9;100;35.7;60
+d1d0xa2;32.9;0;0.5;12.5;14.3;28.6;15
+\end{verbatim}
+
+%*******************************************************************************
+\section{Shlukovací nástroj FitClust} \label{nastroj}
+%*******************************************************************************
+
+Vytvoøený nástroj, pojmenovaný FitClust, nemá grafické u¾ivatelské rozhraní, ale
+spou¹tí se pouze z~pøíkazového øádku. Tøída \texttt{Main} pro jeho spou¹tìní se
+nachází v~Java balíèku \texttt{cz.vutbr.fit.xkubis03.dp}. Tento balíèek obsahuje
+nìkolik podbalíèku se souèástmi nástroje:
+
+\begin{itemize}
+  \item \texttt{dbscan} -- algoritmus DBSCAN,
+  \item \texttt{denclue} -- algoritmus DENCLUE,
+  \item \texttt{fitclust} -- hlavní balíèek s~nástrojem FitClust,
+  \item \texttt{readers} -- tøídy pro naèítání datových souborù,
+  \item \texttt{structures} -- struktury pou¾ívané nástrojem a~jeho souèástmi.
+\end{itemize}
+
+%-------------------------------------------------------------------------------
+\subsection{Naèítání vstupních souborù}
+%-------------------------------------------------------------------------------
+
+Most mezi bajtovou reprezentací souboru a~jednotlivými znaky je zaji¹tìn pomocí
+objektu tøídy \texttt{InputStreamReader}. Ten se pøedává objektu tøídy
+\texttt{BufferedReader}, aby bylo mo¾né naèítat po jednotlivých øádcích. Obì
+tøídy jsou importovány z~balíèku \texttt{java.io}. Pokud se naèítá soubor ve
+formátu CSV, je vyu¾it \texttt{StringTokenizer} z~balíèku \texttt{java.util},
+který umí rozdìlit text dle zadaného oddìlovacì. V~pøípadì implementovaného
+nástroje se jedná v¾dy o~oddìlující støedník. Pøi naèítání FASTA souborù nelze
+tento ,,rozdìlovaè'' vyu¾ít a~jejich zpracovávání je øe¹eno skrze podmínky.
+Sekvence se ihned pøi naèítání porovnávají na délku a~pokud nejsou seøazeny
+od nejdel¹í po nejkrat¹í, provede se jejich seøazení automaticky.
+
+Práci s~FASTA soubory obstarává tøída \texttt{FASTAReader}. Pro naèítání vektorù
+slou¾í tøída \texttt{VectorsReader}. Obì jsou umístìny v~podbalíèku
+\texttt{readers}.
+
+%-------------------------------------------------------------------------------
+\subsection{Datové struktury}
+%-------------------------------------------------------------------------------
+
+Nástroj pracuje s~mnoha vlastními datovými strukturami z~podbalíèku
+\texttt{structures}. Ty uchovávají informace pro rùzné kroky algoritmù. Jedná se
+zejména o:
+
+\begin{itemize}
+  \item \texttt{Clusters} -- mno¾ina výsledných shlukù,
+  \item \texttt{Cube} -- krychle pro algoritmus DENCLUE,
+  \item \texttt{FASTAItem} -- jeden FASTA záznam sekvence,
+  \item \texttt{FitClustItem}  -- spojení FASTA záznamu a~jeho vektoru,
+  \item \texttt{Point} -- bod ve shlukovaném prostoru algoritmy DENCLUE a~DBSCAN,
+  \item \texttt{PointSet} -- mno¾ina/shluk bodù,
+  \item \texttt{Space} -- prostor algoritmu DENCLUE,
+  \item \texttt{Vector} -- shlukovaný vektor sekvence.
+\end{itemize}
+
+Kromì základních datových typù \texttt{int}, \texttt{double} a~\texttt{String}
+jsou struktury slo¾eny z~kolekcí \texttt{ArrayList}, \texttt{HashMap},
+\texttt{HashSet}, \texttt{Map} a~\texttt{Set}. V¹echny importované z~balíèku
+\texttt{java.util}. Funkce \texttt{toString} reprezentující objekty
+textovým øetìzcem pou¾ívají tøídu \texttt{DecimalFormat} balíèku
+\texttt{java.text}, která zaji¹»uje formátování desetinných èísel.
+
+Tøída \texttt{FASTAItem} implementuje rozhraní \texttt{Comparable} a~z nìj
+funkci \texttt{compareTo} za úèelem øazení vstupních sekvencí dle délky.
+Øazení sekvencí je pak mo¾né díky objektu komparátoru
+\texttt{FASTAItemComparator}.
+
+%-------------------------------------------------------------------------------
+\subsection{Algoritmus DBSCAN}
+%-------------------------------------------------------------------------------
+
+Podbalíèek \texttt{dbscan} obsahuje jednu tøídu \texttt{DBScan} pro tento
+algoritmus. Veøejné jsou pouze konstruktory nastavující parametry ($\varepsilon$,
+\emph{MinPts}) s~mno¾inou shlukovaných bodù a~funkce \texttt{getClusters}, která
+provádí algoritmus a~vrací objekt tøídy \texttt{Clusters} s~výslednými shluky.
+Dal¹í funkce roz¹iøující shluk (\texttt{enlargeCluster}) a~funkce vracející
+dostupné sousedy bodu (\texttt{getNeighbors}) jsou privátní a~tedy zvenku
+nedostupné.
+
+%-------------------------------------------------------------------------------
+\subsection{Algoritmus DENCLUE}
+%-------------------------------------------------------------------------------
+
+Implementace algoritmu DENCLUE je v~podbalíèku \texttt{denclue}. Stejnì jako
+DBSCAN obsahuje pouze jednu tøídu \texttt{DenClue}. Konstruktorù má hned
+nìkolik, zále¾í na tom, které v¹echny parametry mají být nastaveny. Lze postupnì
+(shora-dolù) definovat tyto:
+
+\begin{itemize}
+  \item \texttt{sigma} -- parametr $\sigma$ pro vliv bodu,
+  \item \texttt{xi} -- parametr významnosti atraktoru $\xi$ (implicitnì 4),
+  \item \texttt{maxIterations} -- maximální poèet iterací metody hill-climbing
+  (implicitnì 5),
+  \item \texttt{delta} -- parametr pro stoupání metody hill-climbing
+  (implicitnì 1).
+\end{itemize}
+
+Jedinou veøejnou funkcí je opìt \texttt{getClusters} vracející objekt
+\texttt{Clusters} se shluky. Privátní funkce tøídy, které algoritmus vyu¾ívá,
+ale nejsou dostupné zvenku:
+
+\begin{itemize}
+  \item \texttt{mergeClusters} -- sluèuje shluky, pokud mezi nimi existuje
+  cesta,
+  \item \texttt{determineAttractors} -- urèení atraktorù,
+  \item \texttt{calcInfluence} -- výpoèet vlivu mezi dvìma body,
+  \item \texttt{calcDensity} -- výpoèet hustoty v~bodu,
+  \item \texttt{calcGradient} -- výpoèet bodu stoupání,
+  \item \texttt{getDensAttractor} -- urèení nového atraktoru,
+  \item \texttt{pathExist} -- vrací logickou hodnotu, zda existuje cesta mezi
+  body a~jejich shluky.
+\end{itemize}
+
+%-------------------------------------------------------------------------------
+\subsection{FitClust} \label{fitclust}
+%-------------------------------------------------------------------------------
+
+Nástroj FitClust je umístìn v~podbalíèku \texttt{fitclust} a~skládá se ze dvou
+tøíd.
+
+Tøída \texttt{Alignment} zaji¹»uje spou¹tìní externích aplikací pro
+výpoèet zárovnání dvou sekvencí. K~dispozici jsou veøejné funkce
+\texttt{alignFASTA} a~\texttt{alignBLAST}. Privátní funkce \texttt{align}
+obaluje spoleènou (obecnou) èást kódu zarovnávání. Do funkcí vstupují dva
+objekty tøídy \texttt{FASTAItem} obsahující zarovnávané sekvence. Pøed samotným
+zarovnáváním se porovnají délky sekvencí, aby byla del¹í v¾dy na prvním místì.
+Následnì jsou obì sekvence zapsány pomocí \texttt{java.io.PrintWriter} do dvou
+souborù \emph{f1.fa} a~\emph{f2.fa}. Po zapsání souborù se statickou funkcí
+\texttt{getRuntime} tøídy \texttt{Runtime} získá objekt asociovaný s~prostøedím
+bì¾ící Java aplikace. Funkcí \texttt{exec} takového objektu je vytvoøen
+a~spu¹tìn samostatný proces tøídy \texttt{Process} s~externí aplikací. Na jeho
+ukonèení se èeká metodou \texttt{waitFor} a~potom se pomocí metody
+\texttt{exitValue} získá návratová hodnota. Pokud proces skonèil s~chybou,
+vyhodí funkce výjimku, jinak ze standardního výstupu procesu pøeètì hodnotu
+zarovnání sekvencí. Tímto zpùsobem se dostane výstupní hodnota z~externí
+aplikace do FitClustu.
+
+\texttt{FitClust} obsahuje hlavní jádro nástroje, které spojuje v¹echny vý¹e
+uvedené implementované èásti do jednoho funkèního celku. Vytvoøením instance
+této tøídy lze pøistupovat k~dostupným funkcím nástroje. Konstruktor pøebírá
+7 parametrù pou¾ívaných dále v~jednolivých funkcích:
+
+\begin{itemize}
+  \item \texttt{threshold} -- urèuje práh podobnosti semínek pro vektorizaci
+  sekvencí. Na základì tohoto prahu se vylouèí podobná si semínka, v¾dy to
+  krat¹í z~nich.
+  \item \texttt{alignment} -- øetìzec udávající pou¾itou metodu zarovnání
+  sekvencí. Volit lze z~FASTA a~BLAST.
+  \item \texttt{clustering} -- øetìzec s~názvem shlukovacího algoritmu. Na výbìr
+  jsou mo¾nosti DBSCAN a~DENCLUE.
+  \item \texttt{param} -- parametr $\sigma$ nebo $\varepsilon$, zále¾í na
+  zadaném shlukovacím algoritmu.
+  \item \texttt{number} -- parametr $\xi$ nebo $minPts$, opìt zále¾í na zvoleném
+  algoritmu.
+  \item \texttt{maxIterations} -- maximální poèet iterací metody hill-climbing
+  algoritmu DENCLUE.
+  \item \texttt{delta} -- parametr stoupání metody hill-climbing.
+\end{itemize}
+
+Vytvoøení objektu tøídy \texttt{FitClust} a~volání jeho jednotlivých veøejných
+funkcí se zapisuje do spou¹tìjící hlavní tøídy \texttt{Main}. Mo¾nosti poøadí
+volání funkcí z~dùvodu návaznosti pøitomnosti dat jsou zobrazeny na diagramu
+\ref{fig:fitclust}. Které funkce budou pou¾ity zále¾í na po¾adovaných operacích:
+
+\begin{itemize}
+  \item \texttt{loadFasta} -- naètení sekvencí z~FASTA souboru,
+  \item \texttt{writeFasta} -- zápis seøazených sekvencí do souboru,
+  \item \texttt{selectSeeds} -- výbìr semínek pro vektorizaci,
+  \item \texttt{excludeSeeds} -- vylouèení podobných si semínek,
+  \item \texttt{vectorize} -- vektorizace sekvencí,
+  \item \texttt{loadVectors} -- naètení vektorù pro shlukování,
+  \item \texttt{writeVectors} -- zápis naètených/vypoèítaných vektorù do souboru,
+  \item \texttt{doClustering} -- provedení shlukování nad vektory,
+  \item \texttt{writeCls} -- zápis výsledných shlukù do souboru.
+\end{itemize}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.3]{fig/fitclust.eps}
+  \caption[Diagram mo¾ností poøadí volání funkcí objektu FitClust.]{Diagram
+  mo¾ností poøadí volání funkcí objektu FitClust. Funkci \texttt{writeFasta} je
+  mo¾né volat kdekoliv po funkci \texttt{loadFasta}.}
+  \label{fig:fitclust}
+\end{figure}
+
+Ka¾dý shlukovací algoritmus má v~této tøídì vlastní privátní metodu. Pro
+implementované algoritmy DBSCAN a~DENCLUE tedy existují metody \texttt{doDBSCAN}
+a~\texttt{doDENCLUE}. Dal¹í privátní funkcí je \texttt{align} pro zarovnání
+sekvencí, kterou volají metody \texttt{excludeSeeds} a~\texttt{vectorize}.
+
+
+%###############################################################################
+\chapter{Experimentální ohodnocení} \label{tests}
+%###############################################################################
+
+Kapitola o~testování je vìnována popisu vybraných testovacích dat, zpùsobu
+testování existujících algoritmù a~zpùsobu porovnání získaných výsledkù s~jejich
+vyhodnocením.
+
+
+%*******************************************************************************
+\section{Výbìr testovací sady sekvencí} \label{testset}
+%*******************************************************************************
+
+Proteinové databáze, popsané v~kapitole \ref{databases}, obsahují velké mno¾ství
+sekvencí, které jsou rozdìleny do rùzných hierarchických struktur. Pro úèel
+testování nástrojù je nejvhodnìj¹í vybrat databázi s~hierarchií, která nejvíce
+odpovídá shlukùm na rùzných úrovních podobnosti. Takové rozdìlení se nachází
+v~databázích SCOP (\ref{scop}), SCOPe (\ref{scope}) a~CATH (\ref{cath}).
+
+Dal¹í po¾adavek na testovací sadu je, aby obsahovala na jednotlivých úrovních
+proteiny, které spolu opravdu souvisejí a~mají dostateènì podobné vlastnosti.
+Do jisté míry tento po¾adavek splòují v¹echny ètyøi vý¹e zmínìné databáze.
+Nejlep¹í volbou z~nich bude SCOP, proto¾e proteiny zaøazené do jednotlivých
+skupin podle vlastností jsou ovìøeny manuálnì, a~lze ji tedy pova¾ovat za
+referenèní. Ostatní databáze byly vytvoøeny (alespoò èásteènì) pomocí
+automatických algoritmù a~nemusí být natolik pøesné.
+
+Kompletní SCOP 1.75 zahrnuje 33\,352 sekvencí, ale pro testování bude dostateèný
+i~men¹í poèet. Na webových stránkách databáze SCOP lze získat její podmno¾iny
+obsahující sekvence s~identitou pod urèitý práh. Jako vhodná byla vybrána
+podmno¾ina s~identitou pod 95\,\%, která má 16\,712 sekvencí. Nejkrat¹í (tøi)
+sekvence mají délku 21 aminokyselin, (jedna) nejdel¹í je dlouhá 1\,504
+aminokyselin. Nejèastìj¹í délku 107 aminokyselin má 173 sekvencí. Oproti
+kompletní databázi v~ní chybí pouze jedna superrodina s~jednou její
+(pod)rodinou, co¾ by nemìlo mít na výsledky testù ¾ádný zásadní vliv.
+
+Poèty sekvencí v~jednotlivých rodinách a~superrodinách se dosti li¹í. Nejvìt¹í
+(jedna) rodina obsahuje celkem 667 sekvencí, nejmen¹í jsou rodiny s~jednou
+sekvencí, kterých je 1\,667. Èetnosti velikostí rodin ukazuje histogram
+\ref{fig:histFam}. Nejvìt¹í (jedna) superrodina má 920 sekvencí, nejmen¹í
+superrodiny zahrnují také pouze jednu sekvenci. Takových superrodin je 672.
+Histogram \ref{fig:histSFam} zobrazuje èetnosti velikostí superrodin. Oba grafy
+mají pro lep¹í názornost logaritmické mìøítko o~základu 10.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/histogramRodiny.eps}
+  \caption{Histogram velikostí rodin databáze SCOP 1.75.}
+  \label{fig:histFam}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/histogramSuperrodiny.eps}
+  \caption{Histogram velikostí superrodin databáze SCOP 1.75.}
+  \label{fig:histSFam}
+\end{figure}
+
+Testování bude probíhat pøedev¹ím na úrovni proteinových superrodin a~jejich
+rodin (pøedstavující shluky), proto¾e tøídy a~tvary seskupují dohromady
+sekvence s~podobností, která je zalo¾ena hlavnì na sekundární struktuøe
+proteinù.
+
+
+%*******************************************************************************
+\section{Technika porovnání sad shlukù} \label{compare}
+%*******************************************************************************
+
+Porovnání výsledkù shlukování bude stì¾ejní èástí testování. Aby bylo mo¾né
+porovnat dva výsledky shlukování stejné datové sady rùznými algoritmy, popø.
+stejným algoritmem (napø. s~jiným poøadím vstupních sekvencí) mezi sebou, je
+nutné zavést nìjakou míru jejich podobnosti.
+
+Shluk je mno¾ina objektù, které si jsou podobné, ale zároveò se li¹í od objektù
+v~ostatních shlucích. Pro úèel této práce se budou porovnávat algoritmy
+shlukování, které produkují exkluzivní shluky. Tedy takové, které se nemohou
+pøekrývat.
+
+Pro výpoèet podobnosti dvou sad shlukù definujme \cite{similarity}: Nech»
+$C = \{C_1, C_2, \dots, C_m\}$ a~$D = \{D_1, D_2, \dots, D_n\}$ jsou výsledky
+dvou shlukování na stejné datové sadì. Pøedpokládáme, ¾e $C$ i~$D$ jsou
+exkluzivní shlukování, kdy jsou shluky vzájemnì disjunktní, tj. ka¾dý vzorek
+z~datové sady patøí právì do jednoho shluku. Pak podobnostní matice pro $C$
+a~$D$ je matice $S_{C, D}$ s~rozmìry $m \times n$ (\ref{eq:matrix}),
+\begin{equation}
+  \label{eq:matrix}
+  S_{C, D} = \begin{bmatrix}
+               S_{11} & S_{12} & \cdots & S_{1j} & \cdots & S_{1n} \\
+               \vdots & \vdots & & \vdots & & \vdots \\
+               S_{i1} & S_{i2} & \cdots & S_{ij} & \cdots & S_{in} \\
+               \vdots & \vdots & & \vdots & & \vdots \\
+               S_{m1} & S_{m2} & \cdots & S_{mj} & \cdots & S_{mn}
+             \end{bmatrix}
+\end{equation}
+kde $S_{ij} = p/q$ (Jaccardùv koeficient podobnosti\footnote{Více informací: \url{http://people.revoledu.com/kardi/tutorial/Similarity/Jaccard.html}.}),
+$p$ je velikost prùniku a~$q$ je velikost sjednocení dvou shlukù $C_i$ a~$D_j$.
+Podobnost dvou výsledkù shlukování $C$ a~$D$ lze pak definovat vztahem
+(\ref{eq:similarity}) \cite{similarity}.
+
+\begin{equation}
+  \label{eq:similarity}
+  Podobnost(C, D) = \sum_{i \leq m, j \leq n} S_{ij} / max(m, n).
+\end{equation}
+
+Napøíklad: Nech» $C_1 = \{1, 2, 3, 4\}$, $C_2 = \{5, 6, 7, 8\}$ a~$D_1 = \{1,
+2\}$, $D_2 = \{3, 4\}$, $D_3 = \{5, 6\}$, $D_4 = \{7, 8\}$, tedy $m = 2$
+a~$n = 4$. Potom podobnost mezi shlukováními $C$ a~$D$ je dána maticí $S_{C, D}$
+v~tabulce \ref{tab:similarity}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l||c|c|c|c|}
+    \hline
+    \textbf{Shluk} & \textbf{$D_1$} & \textbf{$D_2$} & \textbf{$D_3$} & \textbf{$D_4$} \\
+    \hhline{|=#=|=|=|=|}
+    \textbf{$C_1$} & 2/4 & 2/4 & 0/6 & 0/6 \\
+    \hline
+    \textbf{$C_2$} & 0/6 & 0/6 & 2/4 & 2/4 \\
+    \hline
+  \end{tabular}
+  \caption[Matice $S_{C, D}$ pro pøíklad výpoètu podobnosti dvou shlukování.]
+  {Matice $S_{C, D}$ pro pøíklad výpoètu podobnosti dvou shlukování
+  \cite{similarity}.}
+  \label{tab:similarity}
+\end{table}
+
+Pro~buòku $C_1D_1$ platí, ¾e $p = |C_1 \cap D_1| = |\{1, 2\}| = 2$ a~$q = |C_1
+\cup D_1| = |\{1, 2, 3, 4\}| = 4$. Potom $C_1D_1 = p/q = 2/4$. Stejnì jsou
+vypoèítány i~ostatní buòky matice. Tak¾e podobnost mezi sadami shlukù $C$ a~$D$
+bude v~tomto pøípadì $Podobnost(C, D) = (2/4 + 2/4 + 0/6 + 0/6 + 0/6 + 0/6 + 2/4
++ 2/4)/4 = 0,5$.
+
+Jednodu¹e lze ukázat, ¾e $0 < Podobnost(C, D) \leq 1$ a~$Podobnost(C, D) = 1$
+pro dvì identická shlukování, kdy je podobnostní matice ètvercová. Tato míra
+podobnosti se dá aplikovat pouze na shlukování koneèné sady vzorkù do koneèného
+poètu disjunktních (nebo nepøekrývajících se) shlukù \cite{similarity}.
+
+Výstupní sady shlukù sekvencí z~testovaných algoritmù budou porovnávány pomocí
+této techniky na míru vzájemné podobnosti oproti referenèní sadì shlukù popsané
+v~pøedchozí podkapitole \ref{testset}.
+
+
+%*******************************************************************************
+\section{Výsledky algoritmù}
+%*******************************************************************************
+
+Vstupem v¹ech testovaných algoritmù byla testovací sada sekvencí (podkapitola
+\ref{testset}) seøazená sestupnì podle jejich délky (od nejdel¹í po nejkrat¹í),
+na základì doporuèení u~standardních algoritmù (podkapitola \ref{standard}).
+
+%-------------------------------------------------------------------------------
+\subsection{UCLUST}
+%-------------------------------------------------------------------------------
+
+Testy algoritmu UCLUST probìhly pomocí stejnojmenného programu ve verzi 1.2.22q\footnote{K~dispozici na: \url{http://www.drive5.com/uclust/downloads1_2_22q.html}.}.
+Pro shlukování testovací sady byl spou¹tìn s~kombinacemi parametrù, které jsou
+uvedeny v~tabulce \ref{tab:uclust}. Celkovì se jednalo o~724 rùzných kombinací
+vstupních parametrù.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|c|c|c|}
+    \hline
+    \multicolumn{2}{|c|}{\textbf{Identita [\%]}} & \textbf{Délka} & \textbf{Poèet} \\
+    \cline{1-2}
+    \multicolumn{1}{|c|}{\textbf{Rozsah}} & \textbf{Krok} & \textbf{slova} & \textbf{testù} \\
+    \hhline{|=|=|=|=|}
+    10,0 -- 100,0 & 0,5 & 2--5 & 724 \\
+    \hhline{|=|=|=|=|}
+    \multicolumn{3}{|l|}{\textbf{Celkem}} & \textbf{724} \\
+    \hline
+  \end{tabular}
+  \caption{Kombinace vstupních parametrù programu UCLUST.}
+  \label{tab:uclust}
+\end{table}
+
+Soubory s~výslednými shluky ze v¹ech bìhù programu byly následnì pøevedeny na
+jednotný formát (\ref{format}), aby je bylo mo¾né vzájemnì porovnat na podobnost
+technikou uvedenou v~podkapitole \ref{compare}. Porovnávání vùèi referenèním
+shlukùm bylo provedeno zvlá¹» na úrovni rodin a~superrodin. Získané hodnoty
+podobností pro rodiny jsou vyneseny v~grafu \ref{fig:uclustFamByWLen}.
+Podobnosti se superrodinami lze vidìt v~grafu \ref{fig:uclustSFamByWLen}.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/uclustFamByWLen.eps}
+  \caption{UCLUST: Hodnoty podobností shlukù na úrovni rodin.}
+  \label{fig:uclustFamByWLen}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/uclustSFamByWLen.eps}
+  \caption{UCLUST: Hodnoty podobností shlukù na úrovni superrodin.}
+  \label{fig:uclustSFamByWLen}
+\end{figure}
+
+Výsledky pro rùzná nastavení délky slova se mezi sebou dosti li¹í na itervalu
+10,0--50,0\,\% prahové identity. Od prahu 50,0\,\% je rozdíl pouze pøi délce
+slova 2. Shluky získáné algoritmem UCLUST se tìm referenèním nejvíce podobaly
+s~nastavením parametrù, které jsou uvedeny v~tabulce \ref{tab:uclustResults}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|c||r|}
+    \hline
+    \textbf{Úroveò} & \textbf{Práh identity} & \textbf{Délka} & \textbf{Podobnost} \\
+    \textbf{porovnání} & \textbf{sekvencí [\%]} & \textbf{slova} & \textbf{s~referencí} \\
+    \hline
+    Rodina & 21,0 & 5 & 0,445529 \\
+    \hline
+    Superrodina & 20,0 & 5 & 0,291428 \\
+    \hline
+  \end{tabular}
+  \caption{Nejlep¹í dosa¾ené výsledky algoritmem UCLUST.}
+  \label{tab:uclustResults}
+\end{table}
+
+%-------------------------------------------------------------------------------
+\subsection{CD-HIT}
+%-------------------------------------------------------------------------------
+
+Experimentování s~algoritmem CD-HIT probíhalo programem stejného jména verze
+4.6.1\footnote{Lze stáhnout z: \url{http://weizhongli-lab.org/cd-hit/download.php}.}.
+Kombinace vstupních parametrù, se kterými byl spou¹tìn, jsou shrnuty tabulkou
+\ref{tab:cdhit}. Bylo provedeno celkem 784 bìhù s~rùznými parametry. Oproti
+pøedchozímu UCLUST algoritmu má CD-HIT mo¾nost volby pøiøazení aktuálnì
+zpracovávané sekvence k~nejbli¾¹ímu z~více vyhovujících centroidù.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|c|c|c|r|}
+    \hline
+    \multicolumn{2}{|c|}{\textbf{Identita [\%]}} & \textbf{Délka} & \textbf{Centroid} & \textbf{Poèet} \\
+    \cline{1-2}
+    \multicolumn{1}{|c|}{\textbf{Rozsah}} & \textbf{Krok} & \textbf{slova} & \textbf{sekvence} & \textbf{testù} \\
+    \hhline{|=|=|=|=|=|}
+    40,0 -- 46,5 & \multirow{4}{*}{0,5} & 2 & \multirow{4}{*}{první/nejbli¾¹í} & 28 \\
+    \hhline{|-|~|-|~|-|}
+    47,0 -- 55,5 & & 2--3 & & 72 \\
+    \hhline{|-|~|-|~|-|}
+    56,0 -- 62,5 & & 2--4 & & 84 \\
+    \hhline{|-|~|-|~|-|}
+    63,0 -- 100,0 & & 2--5 & & 600 \\
+    \hhline{|=|=|=|=|=|}
+    \multicolumn{4}{|l|}{\textbf{Celkem}} & \textbf{784} \\
+    \hline
+  \end{tabular}
+  \caption{Kombinace vstupních parametrù programu CD-HIT.}
+  \label{tab:cdhit}
+\end{table}
+
+Pro porovnání výsledkù shlukování z~algoritmu CD-HIT pomocí techniky
+z~podkapitoly \ref{compare} bylo také nutné výstupní soubory pøevést na jednotný
+formát (\ref{format}). Porovnávání s~referenèními shluky probìhlo opìt na úrovni
+rodin a~superrodin zvlá¹». Vypoèítané hodnoty podobností rodin jsou zobrazeny
+v~grafech \ref{fig:cdhitFamByWLenG0} (první vyhovující centroid)
+a~\ref{fig:cdhitFamByWLenG1} (nejbli¾¹í vyhovující centroid).
+Podobnosti superrodin zobrazují grafy \ref{fig:cdhitSFamByWLenG0} (první
+vyhovující centroid) a~\ref{fig:cdhitSFamByWLenG1} (nejbli¾sí vyhovující
+centroid).
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/cdhitFamByWLenG0.eps}
+  \caption{CD-HIT: Hodnoty podobností shlukù na úrovni rodin pøi zaøazení
+  k~prvnímu vyhovujícímu centroidu.}
+  \label{fig:cdhitFamByWLenG0}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/cdhitFamByWLenG1.eps}
+  \caption{CD-HIT: Hodnoty podobností shlukù na úrovni rodin pøi zaøazení
+  k~nejbli¾¹ímu z~více vyhovujících centroidù.}
+  \label{fig:cdhitFamByWLenG1}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/cdhitSFamByWLenG0.eps}
+  \caption{CD-HIT: Hodnoty podobností shlukù na úrovni superrodin pøi zaøazení
+  k~prvnímu vyhovujícímu centroidu.}
+  \label{fig:cdhitSFamByWLenG0}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/cdhitSFamByWLenG1.eps}
+  \caption{CD-HIT: Hodnoty podobností shlukù na úrovni superrodin pøi zaøazení
+  k~nejbli¾¹ímu z~více vyhovujících centroidù.}
+  \label{fig:cdhitSFamByWLenG1}
+\end{figure}
+
+I~kdy¾ algoritmus pracoval s~rùznými délkami slova, jejich výsledné hodnoty se
+na celém testovaném intervalu indentity vzájemnì témìø neli¹í a~jednotlivé
+køivky pro délky slov se na v¹ech grafech víceménì pøekrývají. Mírnì lep¹í
+výsledky dává algoritmus pøi zaøazování sekvencí k~nejbli¾¹ímu vyhovujícímu
+centroidu. Nejvìt¹í podobnosti mezi referencemi a~výstupy algoritmu CD-HIT byly
+dosa¾eny s~nastavením hodnot parametrù uvedených v~tabulce
+\ref{tab:cdhitResults}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|c|c||r|}
+    \hline
+    \textbf{Úroveò} & \textbf{Práh identity} & \textbf{Délka} & \textbf{Centroid} & \textbf{Podobnost} \\
+    \textbf{porovnání} & \textbf{sekvencí [\%]} & \textbf{slova} & \textbf{sekvencí} & \textbf{s~referencí} \\
+    \hline
+    Rodina & 40,0 & 2 & nejbli¾¹í & 0,378325 \\
+    \hline
+    Superrodina & 40,0 & 2 & nejbli¾¹í & 0,189955 \\
+    \hline
+  \end{tabular}
+  \caption{Nejlep¹í dosa¾ené výsledky algoritmem CD-HIT.}
+  \label{tab:cdhitResults}
+\end{table}
+
+%-------------------------------------------------------------------------------
+\subsection{Implementovaný nástroj}
+%-------------------------------------------------------------------------------
+
+Pøi testování implementovaného nástroje nastal problém s~nedostatkem operaèní
+pamìti pro algoritmus DBSCAN a~bylo nutné zmìnit vstupní testovací sadu.
+Z~pùvodní kompletní databáze SCOP 1.75 (\ref{testset}) s~16\,712 sekvencemi bylo
+vybráno pìt nìjvìt¹ích superrodin. Testy probíhaly na ka¾dé z~nich zvlá¹» a~také
+na v¹ech pìti rodinách jako celku. Jejich statistiky jsou uvedeny v~tabulce
+\ref{tab:biggest}. Histogram velikostí rodin tohoto podvýbìru je na obrázku
+\ref{fig:histBiggest}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l|r|r|}
+    \hline
+    \textbf{Superrodina} & \textbf{Poèet rodin} & \textbf{Poèet sekvencí} \\
+    \hhline{|=|=|=|}
+    a.4.5 & 84 & 220 \\
+    \hline
+    b.1.1 & 4 & 920 \\
+    \hline
+    c.2.1 & 12 & 306 \\
+    \hline
+    c.37.1 & 24 & 421 \\
+    \hline
+    c.47.1 & 23 & 178 \\
+    \hhline{|=|=|=|}
+    Celek & 147 & 2045 \\
+    \hline
+  \end{tabular}
+  \caption{Statistiky pìti nejvìt¹ích superrodin databáze SCOP 1.75.}
+  \label{tab:biggest}
+\end{table}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[scale=0.55]{fig/histogramBiggest.eps}
+  \caption{Histogram velikostí rodin pìti nejvìt¹ích superrodin databáze SCOP
+  1.75.}
+  \label{fig:histBiggest}
+\end{figure}
+
+\subsubsection*{Testované kombinace algoritmù}
+
+FitClust umo¾òuje zarovnání sekvencí algoritmy BLAST a~FASTA. Dále umí
+shlukování DBSCAN a~DENCLUE. K~testování bylo vybráno pìt nejvìt¹ích superrodin
+a~jejich celek, tedy celkem ¹est vstupních datových sad. Dohromady tyto mo¾nosti
+tvoøí 24 rùzných kombinací:
+$$\{BLAST, FASTA\}\times\{DBSCAN, DENCLUE\}\times\{a.4.5, b.1.1, c.2.1, c.37.1, c.47.1, celek\}.$$
+Pro ka¾dou kombinaci byla experimentálnì urèena dolní a~horní hranice parametru
+$\varepsilon$ (DBSCAN), resp. $\sigma$ (DENCLUE). Dolní hranice urèuje nejni¾¹í
+hodnotu daného parametru, kdy je ka¾dá sekvence ve svém vlastním shluku. Horní
+hranice naopak urèuje hodnotu parametru, kdy jsou v¹echny sekvence zaøazeny do
+shluku jednoho. Rozsahy prezentuje tabulka \ref{rozsahy}. Mezi tìmito hranicemi
+potom byly kombinace spu¹tìny s~krokem 1.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l||r|r|r|r|}
+    \hline
+    \multirow{2}{*}{\textbf{Superrodina}} & \multicolumn{2}{|c|}{\textbf{DBSCAN ($\varepsilon$)}} & \multicolumn{2}{|c|}{\textbf{DENCLUE ($\sigma$)}} \\
+    \cline{2-5}
+     & \textbf{BLAST} & \textbf{FASTA} & \textbf{BLAST} & \textbf{FASTA} \\
+    \hhline{|=#=|=|=|=|}
+    \textbf{a.4.5} & 160--255 & 35--90 & 50--250 & 30--90 \\
+    \hline
+    \textbf{b.1.1} & 20--325 & 15--170 & 10--320 & 5--165 \\
+    \hline
+    \textbf{c.2.1} & 105--215 & 40--160 & 70--210 & 4--160 \\
+    \hline
+    \textbf{c.37.1} & 80--210 & 65--100 & 30--205 & 20--95 \\
+    \hline
+    \textbf{c.47.1} & 170--235 & 50--85 & 35--235 & 15--80 \\
+    \hhline{|=#=|=|=|=|}
+    \textbf{Celek} & 80--225 & 65--145 & 8--220 & 8--140 \\
+    \hline
+  \end{tabular}
+  \caption{Rozsahy parametrù $\varepsilon$ a~$\sigma$ pro kombinace algoritmù.}
+  \label{rozsahy}
+\end{table}
+
+%*******************************************************************************
+\section{Porovnání algoritmù}
+%*******************************************************************************
+
+Na nových testovacích datech byly opìt spu¹tìny UCLUST a~CD-HIT, vèetnì stejných
+rozsahù jejich parametrù, které jsou uvedeny v~tabulkách \ref{tab:uclust}
+a~\ref{tab:cdhit}. Nejlep¹í dosa¾ené výsledky ka¾dého algoritmu na nových datový
+sadách obsahuje tabulka \ref{tab:best}. Z~výsledkù je patrné, ¾e implementovaný
+nástroj v~mnoha pøípadech dosahuje lep¹ího shlukování ne¾ hojnì pou¾ívaný
+CD-HIT. Naopak stále výraznì zaostává za UCLUSTem, který doká¾e pracovat na
+nízkých identitách.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|l||r||r||r|r|r|r|}
+    \hline
+     & & & \multicolumn{4}{|c|}{\textbf{FitClust}} \\
+    \cline{4-7}
+    \textbf{Superrodina} & \textbf{CD-HIT} & \textbf{UCLUST} & \multicolumn{2}{|c|}{\textbf{DBSCAN}} & \multicolumn{2}{|c|}{\textbf{DENCLUE}} \\
+    \cline{4-7}
+     & & & \textbf{BLAST} & \textbf{FASTA} & \textbf{BLAST} & \textbf{FASTA} \\
+     \hhline{|=#=#=#=|=|=|=|}
+    \textbf{a.4.5} & 0,480 & 0,570 & 0,425 & 0,448 & 0,431 & 0,449 \\
+    \hline
+    \textbf{b.1.1} & 0,029 & 0,492 & 0,277 & 0,253 & 0,277 & 0,256 \\
+    \hline
+    \textbf{c.2.1} & 0,062 & 0,379 & 0,149 & 0,138 & 0,149 & 0,138 \\
+    \hline
+    \textbf{c.37.1} & 0,104 & 0,286 & 0,129 & 0,124 & 0,124 & 0,111 \\
+    \hline
+    \textbf{c.47.1} & 0,223 & 0,368 & 0,317 & 0,290 & 0,273 & 0,283 \\
+    \hhline{|=#=#=#=|=|=|=|}
+    \textbf{Celek} & 0,175 & 0,307 & 0,089 & 0,082 & 0,174 & 0,072 \\
+    \hline
+  \end{tabular}
+  \caption{Porovnání nejlep¹ích dosa¾ených výsledkù jednotlivými algoritmy.}
+  \label{tab:best}
+\end{table}
+
+
+%###############################################################################
+\chapter{Závìr} \label{theend}
+%###############################################################################
+
+Cílem této diplomové práce bylo navrhnout a~implementovat shlukovací nástroj,
+který by dosahoval lep¹ích výsledkù, ne¾ ty existující. Navíc vyu¾ívá pro tento
+obor netradièní pøístupy. Dosa¾ené výsledky na reálných a~opravdu referenèních
+datech bych zhodnotil jako uspokojivé, proto¾e se podaøilo ukázat, ¾e shlukování
+proteinových sekvencí, které by bylo zalo¾ené na hustotì shlukù, je jistou
+cestou k~lep¹ím výsledkùm oproti tradièním shlukovacím algoritmùm.
+
+Souèasná implementace pou¾ívá základní verze vybraných algoritmù. Bylo by
+napøíklad vhodné vyu¾ít roz¹íøené analyzování potenciálních semínek u~algoritmu
+mBed, tedy heuristiku pou¾ívající støedové objekty nebo støedové skupiny. Dále
+by se dal rozvinout algoritmus hill-climbing heuristikou zaji¹»ující rychlej¹í
+dosa¾ení maxima s~men¹ím poètem iterací. Aktuálnì implementované pøístupy
+rozhodnì nabízejí velký poteciál k~dal¹ímu rozvoji projektu, aby dosahoval je¹tì
+mnohem lep¹ích výsledkù, ne¾ dosud.
+
+
+%=========================================================================

@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+"""
+  Diplomová práce na FIT VUT Brno, 2015
+  SHLUKOVÁNÍ BIOLOGICKÝCH SEKVENCÍ
+  @author Bc. Radim KUBIŠ, xkubis03 
+"""
+
+import os
+import sys
+
+if len(sys.argv) > 2:
+    inFile = open(sys.argv[1], 'r')
+    outFile = open(sys.argv[2], 'w')
+elif len(sys.argv) > 1:
+    print "ERROR: output file is not set"
+    exit(1)
+else:
+    print "ERROR: input and output file is not set"
+    exit(1)
+
+lines = [l.strip() for l in inFile.readlines()]
+cls = {}
+
+for line in lines:
+    if line[0] != "#":
+        cols = line.split("\t")
+        if cols[1] not in cls:
+            cls[cols[1]] = []
+        splt = cols[8].split(" ")
+        if splt[0] not in cls[cols[1]]:
+            cls[cols[1]].append(splt[0])
+
+for k in cls.keys():
+    outFile.write(":".join(sorted(cls[k])))
+    outFile.write("\n")
+
+inFile.close()
+outFile.close()
+

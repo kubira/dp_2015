@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+"""
+  Diplomová práce na FIT VUT Brno, 2015
+  SHLUKOVÁNÍ BIOLOGICKÝCH SEKVENCÍ
+  @author Bc. Radim KUBIŠ, xkubis03 
+"""
+
+import sys
+
+scopClusters = []
+
+scopFile = open(sys.argv[1], 'r')
+for line in scopFile:
+    scopClusters.append(line.strip().split(';'))
+scopFile.close()
+
+scopNumOfCls = len(scopClusters)
+
+fileClusters = []
+fileSum = 0
+
+clsFile = open(sys.argv[2], 'r')
+for line in clsFile:
+    fileClusters.append(line.strip().split(';'))
+clsFile.close()
+
+for scopC in scopClusters:
+    for fileC in fileClusters:
+        intersectionLen = len(set(scopC) & set(fileC))
+        unionLen = len(set(scopC) | set(fileC))
+        fileSum += (float(intersectionLen)/float(unionLen))
+
+maxLen = max(scopNumOfCls, len(fileClusters))
+
+print (fileSum/maxLen)
+

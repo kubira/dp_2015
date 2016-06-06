@@ -1,0 +1,4 @@
+#!/bin/bash
+
+java -cp bin cz.vutbr.fit.xkubis03.dp.Main $1 $2 $3 $4 $5 $6 $7 $8 $9
+

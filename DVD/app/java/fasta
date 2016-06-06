@@ -1,0 +1,5 @@
+#!/bin/bash
+
+../programs/fasta35 f1.fa f2.fa -s BP62 -m 10 | grep sw_sim | cut -d\  -f3 | sort -g
+rm f1.fa f2.fa
+

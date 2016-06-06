@@ -1,0 +1,172 @@
+\documentclass{beamer}
+
+\usepackage[latin2]{inputenc}
+\usepackage[IL2]{fontenc}
+\usepackage[czech]{babel}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{epstopdf}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+\usetheme{Madrid}
+
+\setbeamerfont{caption}{size=\tiny}
+
+\title[SEP: Shlukování biologických sekvencí]{Shlukování biologických sekvencí}
+\subtitle{Semestrální projekt}
+\author[Bc. Radim Kubi¹]{Bc. Radim Kubi¹\\ \texttt{\tiny xkubis03@stud.fit.vutbr.cz}\\ {\scriptsize Vedoucí: Ing. Tomá¹ Martínek, Ph.D.}}
+\institute[VUT FIT v~Brnì]{Vysoké uèení technické v~Brnì\\Fakulta informaèních technologií\\Ústav poèítaèových systémù}
+\date{\today}
+
+\begin{document}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}
+
+\titlepage
+
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}{Zadání}
+
+\begin{enumerate}
+  \item Seznamte se se základními principy molekulární biologie a~zpùsoby
+  ulo¾ení informace v~DNA sekvencích.
+  \item Seznamte se s~existujícími pøístupy a~nástroji pro shlukování
+  biologických sekvencí. 
+  \item Navrhnìte nový nástroj pro shlukování proteinových sekvencí
+  s~po¾adovanými vlastnostmi. 
+  \item  \color{black!25}{Proveïte implementaci navr¾eného nástroje ve vhodném
+  programovacím jazyce a~ovìøte jeho funkènost na reálných datech.}
+  \item  \color{black!25}{Zhodno»te dosa¾ené výsledky a~diskutujte mo¾nosti dal¹ího
+  pokraèování projektu.}
+\end{enumerate}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}{Cíl práce a~motivace}
+
+\textbf{Cíl práce:} Vytvoøit nový nástroj shlukující proteinové sekvence.
+
+\vskip5pt
+
+\textbf{Motivace:}
+
+\begin{itemize}
+  \item rychlý nárùst velikostí proteinových databází,
+  \item základ pro predikci struktury, funkce a~evoluce proteinù,
+  \item identifikace nových proteinù patøících do dané rodiny/podrodiny,
+\end{itemize}
+
+\begin{itemize}
+  \item potøeba nástroje s~lep¹ími vlastnostmi.
+\end{itemize}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[scale=0.2]{img/shluky2.eps}
+  \caption{Pøíklad shlukù halogenalkandehalogenáz.}
+\end{figure}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}{Existující pøístupy ke shlukování}
+
+\textbf{Podle výsledných shlukù:}
+
+\begin{enumerate}
+  \item standardní (UCLUST, CD-HIT, kClust, Tribe-MCL, H\&S),
+  \item hierarchické (UPGMA, N-J, mBed, h. CD-HIT).
+\end{enumerate}
+
+\vskip5pt
+
+\textbf{Podle zpùsobu porovnání:}
+
+\begin{enumerate}
+  \item ka¾dá sekvence s~ka¾dou (UCLUST, CD-HIT, Tribe-MCL, H\&S),
+  \item pøedfiltr sekvencí (kClust).
+\end{enumerate}
+
+\vskip5pt
+
+\textbf{Podle zpùsobu shlukování:}
+
+\begin{enumerate}
+  \item identita (UCLUST, CD-HIT),
+  \item podobnost (kClust),
+  \item teorie grafù (Tribe-MCL),
+  \item vektory (mBed).
+\end{enumerate}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}{Nedostatky souèasných metod}
+
+\begin{itemize}
+  \item Shlukování pouze cca do 50\% míry identity.
+\end{itemize}
+
+\begin{itemize}
+  \item Pøesnost vs. výpoèetní nároènost.
+\end{itemize}
+
+\begin{itemize}
+  \item Pamì»ová nároènost.
+\end{itemize}
+
+\begin{itemize}
+  \item Výskyt multidomén a~tzv. ,,promiskuitních'' domén.
+\end{itemize}
+
+\begin{itemize}
+  \item Nevhodnì ukonèený proces shlukování.
+\end{itemize}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\begin{frame}{Návrh øe¹ení}
+
+\textbf{Vstup:} referenèní proteiny a~homologní sekvence.
+
+\vskip10pt
+
+\textbf{Výstup:} hierarchická struktura shlukù (s~referenèními proteiny).
+
+\vskip10pt
+
+\textbf{Vybrané metody:}
+
+\begin{itemize}
+  \item pøedfiltr sekvencí pro vzájemné zarovnání (z~kClust),
+  \item zarovnání k-ticovým dynamickým programováním (kDP),
+  \item shlukování hlídající hustotu shlukù,
+  \item tvorba hierarchie z~reprezentantù.
+\end{itemize}
+
+\vskip10pt
+
+\textbf{Mo¾né roz¹íøení:}
+
+\begin{itemize}
+  \item inkrementální shlukování nových sekvencí.
+\end{itemize}
+
+\end{frame}
+
+%-------------------------------------------------------------------------------
+
+\end{document}
